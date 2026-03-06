@@ -1,6 +1,6 @@
 import markdownit from "markdown-it";
 import footnote from "markdown-it-footnote";
-import emoji from "markdown-it-emoji";
+import { full as emoji } from "markdown-it-emoji";
 import abbr from "markdown-it-abbr";
 import deflist from "markdown-it-deflist";
 import anchor from "markdown-it-anchor";
