@@ -1,0 +1,23 @@
+:root[data-theme="dark"] {
+  --color-fg-default: #e6edf3;
+  --color-fg-muted: #8b949e;
+  --color-canvas-default: #0d1117;
+  --color-canvas-subtle: #161b22;
+  --color-border-default: #30363d;
+  --color-border-muted: #21262d;
+  --color-accent-fg: #58a6ff;
+  --color-danger-fg: #f85149;
+  --color-success-fg: #3fb950;
+  --color-attention-fg: #d29922;
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-canvas-default);
+  color: var(--color-fg-default);
+}
+
+[data-theme="dark"] .hljs {
+  background: var(--color-canvas-subtle) !important;
+  color: var(--color-fg-default) !important;
+}
