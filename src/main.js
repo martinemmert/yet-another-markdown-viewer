@@ -2,11 +2,11 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { render, postRender } from "./renderer.js";
-import "highlight.js/styles/github.css";
 import "katex/dist/katex.min.css";
 
 const contentEl = document.getElementById("content");
 const emptyStateEl = document.getElementById("empty-state");
+const titlebarEl = document.getElementById("titlebar");
 
 let currentDir = "";
 
@@ -29,6 +29,7 @@ function resolveImages() {
 
 function showContent(content, dir, filename) {
   currentDir = dir;
+  titlebarEl.textContent = filename;
   emptyStateEl.style.display = "none";
   contentEl.style.display = "block";
   // Safe: content is from local files on the user's own filesystem.
@@ -57,7 +58,9 @@ function applyTheme() {
   const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   document.getElementById("theme-light").disabled = dark;
   document.getElementById("theme-dark").disabled = !dark;
-  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  const theme = dark ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", theme);
+  document.body.setAttribute("data-theme", theme);
 }
 
 applyTheme();
@@ -82,6 +85,18 @@ listen("tauri://drag-drop", async (event) => {
     if (mdFile) {
       await openFile(mdFile);
     }
+  }
+});
+
+// Handle anchor links — scroll within #content instead of document
+contentEl.addEventListener("click", (e) => {
+  const anchor = e.target.closest("a[href^='#']");
+  if (!anchor) return;
+  e.preventDefault();
+  const id = decodeURIComponent(anchor.getAttribute("href").slice(1));
+  const target = document.getElementById(id);
+  if (target) {
+    contentEl.scrollTo({ top: target.offsetTop - 40, behavior: "smooth" });
   }
 });
 

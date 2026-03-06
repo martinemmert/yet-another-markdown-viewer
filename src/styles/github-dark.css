@@ -1,23 +1,37 @@
+/* Nord Polar Night + Bear-inspired dark theme */
+
 :root[data-theme="dark"] {
-  --color-fg-default: #e6edf3;
-  --color-fg-muted: #8b949e;
-  --color-canvas-default: #0d1117;
-  --color-canvas-subtle: #161b22;
-  --color-border-default: #30363d;
-  --color-border-muted: #21262d;
-  --color-accent-fg: #58a6ff;
-  --color-danger-fg: #f85149;
-  --color-success-fg: #3fb950;
-  --color-attention-fg: #d29922;
+  /* Nord Polar Night base */
+  --color-fg-default: #d8dee9;        /* nord4 — primary text */
+  --color-fg-muted: #7b88a1;          /* softer polar night */
+  --color-fg-heading: #eceff4;        /* nord6 — bright headings */
+  --color-canvas-default: #242933;    /* slightly warmer than nord0 */
+  --color-canvas-subtle: #2e3440;     /* nord0 — subtle backgrounds */
+  --color-border-default: #3b4252;    /* nord1 */
+  --color-border-muted: #434c5e;      /* nord2 */
+  --color-accent-fg: #88c0d0;         /* nord8 — frost links */
+  --color-danger-fg: #bf616a;         /* nord11 — red */
+  --color-success-fg: #a3be8c;        /* nord14 — green */
+  --color-attention-fg: #ebcb8b;      /* nord13 — yellow */
+
+  /* Syntax highlighting */
+  --color-syntax-keyword: #81a1c1;    /* nord9 */
+  --color-syntax-string: #a3be8c;     /* nord14 */
+  --color-syntax-comment: #616e88;    /* nord3 brighter */
+  --color-syntax-function: #88c0d0;   /* nord8 */
+  --color-syntax-number: #b48ead;     /* nord15 */
+  --color-syntax-tag: #81a1c1;        /* nord9 */
+  --color-syntax-attr: #8fbcbb;       /* nord7 */
+
   color-scheme: dark;
 }
 
-body {
+body[data-theme="dark"] {
   background-color: var(--color-canvas-default);
   color: var(--color-fg-default);
 }
 
-[data-theme="dark"] .hljs {
-  background: var(--color-canvas-subtle) !important;
-  color: var(--color-fg-default) !important;
+/* Table striping — dark */
+[data-theme="dark"] .markdown-body table tr:nth-child(2n) {
+  background-color: rgba(46, 52, 64, 0.5);
 }
