@@ -20,6 +20,9 @@ struct FileContent {
 #[tauri::command]
 fn open_file(path: String, app: AppHandle) -> Result<FileContent, String> {
     let path = PathBuf::from(&path);
+    let path = path
+        .canonicalize()
+        .map_err(|e| format!("Failed to resolve path: {}", e))?;
 
     if !path.exists() {
         return Err(format!("File not found: {}", path.display()));
@@ -55,6 +58,19 @@ fn open_file(path: String, app: AppHandle) -> Result<FileContent, String> {
 fn get_initial_file() -> Option<String> {
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 1 {
+        let path = PathBuf::from(&args[1]);
+        // Try resolving as-is first
+        if let Ok(abs) = path.canonicalize() {
+            return Some(abs.to_string_lossy().to_string());
+        }
+        // In tauri dev, CWD is src-tauri/ — try resolving from parent (project root)
+        if let Ok(cwd) = std::env::current_dir() {
+            let from_parent = cwd.join("..").join(&args[1]);
+            if let Ok(abs) = from_parent.canonicalize() {
+                return Some(abs.to_string_lossy().to_string());
+            }
+        }
+        // Return as-is as fallback
         Some(args[1].clone())
     } else {
         None

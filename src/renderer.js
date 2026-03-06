@@ -16,6 +16,10 @@ const md = markdownit({
   linkify: true,
   typographer: true,
   highlight(str, lang) {
+    // Preserve language class for mermaid so postRender can find it
+    if (lang === "mermaid") {
+      return `<pre><code class="language-mermaid">${md.utils.escapeHtml(str)}</code></pre>`;
+    }
     if (lang && hljs.getLanguage(lang)) {
       try {
         return `<pre class="hljs"><code>${hljs.highlight(str, { language: lang }).value}</code></pre>`;
