@@ -10,10 +10,93 @@
     <script type="module" src="/src/main.js"></script>
   </head>
   <body>
-    <div id="titlebar" class="drag-region" data-tauri-drag-region></div>
-    <div id="content" class="markdown-body"></div>
+    <div id="titlebar" class="drag-region" data-tauri-drag-region>
+      <span id="titlebar-text" class="titlebar-text"></span>
+      <span id="titlebar-stats" class="titlebar-stats"></span>
+    </div>
+    <div id="search-bar" class="search-bar" hidden>
+      <input id="search-input" type="text" placeholder="Search..." />
+      <span id="search-count"></span>
+      <button id="search-prev" title="Previous">&uarr;</button>
+      <button id="search-next" title="Next">&darr;</button>
+      <button id="search-close" title="Close">&times;</button>
+    </div>
+    <div id="settings-panel" class="settings-panel" hidden>
+      <div class="settings-group">
+        <label>Theme</label>
+        <select id="setting-theme">
+          <option value="auto">Auto (System)</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+      <div class="settings-group">
+        <label>Typography</label>
+        <select id="setting-font">
+          <option value="literata-inter">Literata + Inter</option>
+          <option value="lora-plex">Lora + IBM Plex</option>
+          <option value="source">Source Serif + Source Sans</option>
+          <option value="merriweather-open">Merriweather + Open Sans</option>
+          <option value="system-serif">System Serif (New York)</option>
+          <option value="system-sans">System Sans (SF Pro)</option>
+          <option value="system-mono">System Mono (SF Mono)</option>
+        </select>
+      </div>
+      <div class="settings-group">
+        <label>Text Size</label>
+        <div class="settings-row">
+          <button id="size-down" class="settings-btn">A&minus;</button>
+          <span id="size-value">17</span>
+          <button id="size-up" class="settings-btn">A+</button>
+        </div>
+      </div>
+      <div class="settings-group">
+        <label>Line Height</label>
+        <div class="settings-row">
+          <button id="lh-down" class="settings-btn">&minus;</button>
+          <span id="lh-value">1.7</span>
+          <button id="lh-up" class="settings-btn">+</button>
+        </div>
+      </div>
+      <div class="settings-group">
+        <label>Line Width</label>
+        <div class="settings-row">
+          <button data-width="620" class="settings-btn width-btn">Narrow</button>
+          <button data-width="820" class="settings-btn width-btn">Medium</button>
+          <button data-width="1080" class="settings-btn width-btn">Wide</button>
+        </div>
+      </div>
+    </div>
+    <div id="help-panel" class="help-panel" hidden>
+      <h4>Keyboard Shortcuts</h4>
+      <dl>
+        <dt><kbd>&#8984;O</kbd></dt><dd>Open file</dd>
+        <dt><kbd>&#8984;W</kbd></dt><dd>Close file</dd>
+        <dt><kbd>&#8984;F</kbd></dt><dd>Search in document</dd>
+        <dt><kbd>&#8984;\</kbd></dt><dd>Toggle table of contents</dd>
+        <dt><kbd>&#8984;,</kbd></dt><dd>Settings</dd>
+        <dt><kbd>&#8984;P</kbd></dt><dd>Print / Export PDF</dd>
+        <dt><kbd>&#8984;+</kbd></dt><dd>Zoom in</dd>
+        <dt><kbd>&#8984;&minus;</kbd></dt><dd>Zoom out</dd>
+        <dt><kbd>&#8984;0</kbd></dt><dd>Reset zoom</dd>
+        <dt><kbd>&#8984;?</kbd></dt><dd>Toggle this help</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Close panel</dd>
+      </dl>
+    </div>
+    <div id="app-layout">
+      <nav id="toc-sidebar" class="toc-sidebar" hidden>
+        <ul id="toc-list"></ul>
+      </nav>
+      <div id="content" class="markdown-body"></div>
+    </div>
     <div id="empty-state" class="empty-state">
-      <p>Drop a Markdown file here or open one from Finder</p>
+      <div class="empty-state-inner">
+        <p>Drop a Markdown file here or press <kbd>&#8984;O</kbd> to open</p>
+        <div id="recent-files" class="recent-files" hidden>
+          <h4>Recent Files</h4>
+          <ul id="recent-list"></ul>
+        </div>
+      </div>
     </div>
   </body>
 </html>

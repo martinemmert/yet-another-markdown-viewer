@@ -5,6 +5,7 @@ import abbr from "markdown-it-abbr";
 import deflist from "markdown-it-deflist";
 import anchor from "markdown-it-anchor";
 import tocDoneRight from "markdown-it-toc-done-right";
+import taskLists from "markdown-it-task-lists";
 import frontMatter from "markdown-it-front-matter";
 import hljs from "highlight.js";
 import katex from "katex";
@@ -35,6 +36,7 @@ md.use(footnote);
 md.use(emoji);
 md.use(abbr);
 md.use(deflist);
+md.use(taskLists, { enabled: false });
 md.use(anchor, { permalink: anchor.permalink.headerLink() });
 md.use(tocDoneRight);
 md.use(frontMatter, (fm) => {

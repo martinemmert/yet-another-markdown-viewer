@@ -24,6 +24,10 @@
   --color-syntax-tag: #81a1c1;        /* nord9 */
   --color-syntax-attr: #8fbcbb;       /* nord7 */
 
+  --heading-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue",
+    Helvetica, Arial, sans-serif;
+  --code-font: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
   color-scheme: light;
 }
 

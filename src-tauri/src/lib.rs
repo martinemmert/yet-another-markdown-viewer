@@ -3,6 +3,7 @@ use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::Duration;
+use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, Manager};
 
 struct AppState {
@@ -55,22 +56,26 @@ fn open_file(path: String, app: AppHandle) -> Result<FileContent, String> {
 }
 
 #[tauri::command]
+fn print_page(app: AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.print();
+    }
+}
+
+#[tauri::command]
 fn get_initial_file() -> Option<String> {
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 1 {
         let path = PathBuf::from(&args[1]);
-        // Try resolving as-is first
         if let Ok(abs) = path.canonicalize() {
             return Some(abs.to_string_lossy().to_string());
         }
-        // In tauri dev, CWD is src-tauri/ — try resolving from parent (project root)
         if let Ok(cwd) = std::env::current_dir() {
             let from_parent = cwd.join("..").join(&args[1]);
             if let Ok(abs) = from_parent.canonicalize() {
                 return Some(abs.to_string_lossy().to_string());
             }
         }
-        // Return as-is as fallback
         Some(args[1].clone())
     } else {
         None
@@ -132,17 +137,66 @@ fn start_watching(app: &AppHandle, path: &PathBuf) {
     }
 }
 
+fn build_menu(app: &AppHandle) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::Error> {
+    let app_menu = SubmenuBuilder::new(app, "YAMV")
+        .item(&PredefinedMenuItem::about(app, Some("About YAMV"), None)?)
+        .separator()
+        .item(&MenuItemBuilder::with_id("settings", "Settings…").accelerator("CmdOrCtrl+,").build(app)?)
+        .separator()
+        .item(&PredefinedMenuItem::hide(app, None)?)
+        .item(&PredefinedMenuItem::hide_others(app, None)?)
+        .item(&PredefinedMenuItem::show_all(app, None)?)
+        .separator()
+        .item(&PredefinedMenuItem::quit(app, None)?)
+        .build()?;
+
+    let file_menu = SubmenuBuilder::new(app, "File")
+        .item(&MenuItemBuilder::with_id("open", "Open…").accelerator("CmdOrCtrl+O").build(app)?)
+        .item(&MenuItemBuilder::with_id("close-file", "Close File").accelerator("CmdOrCtrl+W").build(app)?)
+        .separator()
+        .item(&MenuItemBuilder::with_id("print", "Print…").accelerator("CmdOrCtrl+P").build(app)?)
+        .build()?;
+
+    let edit_menu = SubmenuBuilder::new(app, "Edit")
+        .item(&PredefinedMenuItem::copy(app, None)?)
+        .item(&PredefinedMenuItem::select_all(app, None)?)
+        .separator()
+        .item(&MenuItemBuilder::with_id("find", "Find…").accelerator("CmdOrCtrl+F").build(app)?)
+        .build()?;
+
+    let view_menu = SubmenuBuilder::new(app, "View")
+        .item(&MenuItemBuilder::with_id("toggle-toc", "Toggle Table of Contents").accelerator("CmdOrCtrl+\\").build(app)?)
+        .separator()
+        .item(&MenuItemBuilder::with_id("zoom-in", "Zoom In").accelerator("CmdOrCtrl+=").build(app)?)
+        .item(&MenuItemBuilder::with_id("zoom-out", "Zoom Out").accelerator("CmdOrCtrl+-").build(app)?)
+        .item(&MenuItemBuilder::with_id("zoom-reset", "Actual Size").accelerator("CmdOrCtrl+0").build(app)?)
+        .build()?;
+
+    let help_menu = SubmenuBuilder::new(app, "Help")
+        .item(&MenuItemBuilder::with_id("show-help", "Keyboard Shortcuts").accelerator("CmdOrCtrl+Shift+/").build(app)?)
+        .build()?;
+
+    MenuBuilder::new(app)
+        .item(&app_menu)
+        .item(&file_menu)
+        .item(&edit_menu)
+        .item(&view_menu)
+        .item(&help_menu)
+        .build()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .manage(AppState {
             watcher: Mutex::new(None),
             current_file: Mutex::new(None),
         })
-        .invoke_handler(tauri::generate_handler![open_file, get_initial_file])
+        .invoke_handler(tauri::generate_handler![open_file, get_initial_file, print_page])
         .setup(|app| {
-            // Set initial window size to 40% width x 80% height of monitor
+            let handle = app.handle().clone();
             if let Some(window) = app.get_webview_window("main") {
                 if let Ok(Some(monitor)) = window.current_monitor() {
                     let size = monitor.size();
@@ -154,7 +208,21 @@ pub fn run() {
                     let _ = window.center();
                 }
             }
+
+            let menu = build_menu(&handle)?;
+            app.set_menu(menu)?;
+
             Ok(())
+        })
+        .on_menu_event(|app, event| {
+            let id = event.id().as_ref();
+            if id == "print" {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.print();
+                }
+                return;
+            }
+            let _ = app.emit("menu-action", id);
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,14 +1,125 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { convertFileSrc } from "@tauri-apps/api/core";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { render, postRender } from "./renderer.js";
 import "katex/dist/katex.min.css";
 
+// Fonts
+import "@fontsource-variable/literata";
+import "@fontsource-variable/inter";
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/700.css";
+import "@fontsource-variable/lora";
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-sans/700.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/700.css";
+import "@fontsource-variable/source-serif-4";
+import "@fontsource-variable/source-sans-3";
+import "@fontsource/source-code-pro/400.css";
+import "@fontsource/source-code-pro/700.css";
+import "@fontsource-variable/merriweather";
+import "@fontsource-variable/open-sans";
+import "@fontsource/fira-code/400.css";
+import "@fontsource/fira-code/700.css";
+
 const contentEl = document.getElementById("content");
 const emptyStateEl = document.getElementById("empty-state");
-const titlebarEl = document.getElementById("titlebar");
+const titlebarText = document.getElementById("titlebar-text");
+const titlebarStats = document.getElementById("titlebar-stats");
+const tocSidebar = document.getElementById("toc-sidebar");
+const tocList = document.getElementById("toc-list");
+const searchBar = document.getElementById("search-bar");
+const searchInput = document.getElementById("search-input");
+const searchCount = document.getElementById("search-count");
+const appLayout = document.getElementById("app-layout");
 
 let currentDir = "";
+let currentMarkdown = "";
+let currentFilePath = "";
+
+// ── Utilities ─────────────────────────────────────────────────────
+
+function wordCount(text) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function readingTime(words) {
+  const mins = Math.ceil(words / 230);
+  return mins === 1 ? "1 min read" : `${mins} min read`;
+}
+
+// ── Recent files ──────────────────────────────────────────────────
+
+function getRecentFiles() {
+  try {
+    return JSON.parse(localStorage.getItem("yamv-recent") || "[]");
+  } catch { return []; }
+}
+
+function addRecentFile(path, filename) {
+  let recent = getRecentFiles().filter((r) => r.path !== path);
+  recent.unshift({ path, filename, time: Date.now() });
+  recent = recent.slice(0, 10);
+  localStorage.setItem("yamv-recent", JSON.stringify(recent));
+}
+
+function renderRecentFiles() {
+  const recent = getRecentFiles();
+  const container = document.getElementById("recent-files");
+  const list = document.getElementById("recent-list");
+  if (recent.length === 0) {
+    container.hidden = true;
+    return;
+  }
+  container.hidden = false;
+  list.innerHTML = "";
+  recent.forEach((r) => {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.textContent = r.filename;
+    const pathSpan = document.createElement("span");
+    pathSpan.className = "recent-path";
+    pathSpan.textContent = r.path;
+    a.appendChild(pathSpan);
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      openFile(r.path);
+    });
+    li.appendChild(a);
+    list.appendChild(li);
+  });
+}
+
+// ── Scroll position memory ────────────────────────────────────────
+
+function saveScrollPosition() {
+  if (!currentFilePath) return;
+  const positions = JSON.parse(localStorage.getItem("yamv-scroll") || "{}");
+  positions[currentFilePath] = contentEl.scrollTop;
+  localStorage.setItem("yamv-scroll", JSON.stringify(positions));
+}
+
+function restoreScrollPosition(path) {
+  const positions = JSON.parse(localStorage.getItem("yamv-scroll") || "{}");
+  if (positions[path]) {
+    requestAnimationFrame(() => {
+      contentEl.scrollTop = positions[path];
+    });
+  }
+}
+
+let scrollSaveTimer = null;
+contentEl.addEventListener("scroll", () => {
+  clearTimeout(scrollSaveTimer);
+  scrollSaveTimer = setTimeout(saveScrollPosition, 500);
+  updateActiveTocItem();
+});
+
+// ── Image resolution ──────────────────────────────────────────────
 
 function resolveImages() {
   if (!currentDir) return;
@@ -27,35 +138,70 @@ function resolveImages() {
   });
 }
 
-function showContent(content, dir, filename) {
+// ── Content display ───────────────────────────────────────────────
+
+function showContent(content, dir, filename, filePath) {
+  saveScrollPosition();
   currentDir = dir;
-  titlebarEl.textContent = filename;
+  currentMarkdown = content;
+  currentFilePath = filePath || dir + "/" + filename;
+  titlebarText.textContent = filename;
   emptyStateEl.style.display = "none";
+  appLayout.style.display = "flex";
   contentEl.style.display = "block";
+
+  // Stats
+  const words = wordCount(content);
+  titlebarStats.textContent = `${words.toLocaleString()} words · ${readingTime(words)}`;
+
   // Safe: content is from local files on the user's own filesystem.
   // HTML passthrough is a deliberate feature of this local viewer.
   contentEl.innerHTML = render(content);
   resolveImages();
   postRender(contentEl);
+  buildToc();
+  restoreScrollPosition(currentFilePath);
+
+  // Track recent files and last opened
+  addRecentFile(currentFilePath, filename);
+  localStorage.setItem("yamv-last-file", currentFilePath);
 }
 
 function showEmptyState() {
-  contentEl.style.display = "none";
+  appLayout.style.display = "none";
   emptyStateEl.style.display = "flex";
+  titlebarText.textContent = "YAMV";
+  titlebarStats.textContent = "";
+  renderRecentFiles();
 }
 
 async function openFile(path) {
   try {
     const result = await invoke("open_file", { path });
-    showContent(result.content, result.dir, result.filename);
+    showContent(result.content, result.dir, result.filename, path);
   } catch (e) {
     console.error("Failed to open file:", e);
   }
 }
 
-// Theme handling
-function applyTheme() {
-  const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+async function openFileDialog() {
+  const path = await openDialog({
+    filters: [{ name: "Markdown", extensions: ["md", "markdown", "mdx", "mdown", "mkd"] }],
+    multiple: false,
+  });
+  if (path) {
+    await openFile(path);
+  }
+}
+
+// ── Theme handling ────────────────────────────────────────────────
+
+function applyTheme(pref) {
+  let dark;
+  if (pref === "light") dark = false;
+  else if (pref === "dark") dark = true;
+  else dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
   document.getElementById("theme-light").disabled = dark;
   document.getElementById("theme-dark").disabled = !dark;
   const theme = dark ? "dark" : "light";
@@ -63,18 +209,38 @@ function applyTheme() {
   document.body.setAttribute("data-theme", theme);
 }
 
-applyTheme();
 window
   .matchMedia("(prefers-color-scheme: dark)")
-  .addEventListener("change", applyTheme);
+  .addEventListener("change", () => {
+    const s = loadSettings();
+    if (!s.theme || s.theme === "auto") applyTheme("auto");
+  });
 
-// Listen for file changes from Rust backend
+// ── Event listeners ───────────────────────────────────────────────
+
 listen("file-changed", (event) => {
   const { content, dir, filename } = event.payload;
   showContent(content, dir, filename);
 });
 
-// Drag and drop
+// Menu bar actions from Rust
+listen("menu-action", (event) => {
+  const action = event.payload;
+  const actions = {
+    "open": () => openFileDialog(),
+    "close-file": () => { if (currentFilePath) { saveScrollPosition(); currentFilePath = ""; currentMarkdown = ""; currentDir = ""; showEmptyState(); } },
+    "print": () => invoke("print_page"),
+    "find": () => openSearch(),
+    "toggle-toc": () => toggleToc(),
+    "settings": () => toggleSettings(),
+    "zoom-in": () => { settings.fontSize = Math.min(28, settings.fontSize + 1); saveSettings(settings); applySettings(settings); },
+    "zoom-out": () => { settings.fontSize = Math.max(12, settings.fontSize - 1); saveSettings(settings); applySettings(settings); },
+    "zoom-reset": () => { settings.fontSize = defaults.fontSize; saveSettings(settings); applySettings(settings); },
+    "show-help": () => { const h = document.getElementById("help-panel"); h.hidden = !h.hidden; },
+  };
+  if (actions[action]) actions[action]();
+});
+
 listen("tauri://drag-drop", async (event) => {
   const paths = event.payload.paths;
   if (paths && paths.length > 0) {
@@ -88,24 +254,470 @@ listen("tauri://drag-drop", async (event) => {
   }
 });
 
-// Handle anchor links — scroll within #content instead of document
+// ── External links ────────────────────────────────────────────────
+
 contentEl.addEventListener("click", (e) => {
-  const anchor = e.target.closest("a[href^='#']");
+  const anchor = e.target.closest("a");
   if (!anchor) return;
-  e.preventDefault();
-  const id = decodeURIComponent(anchor.getAttribute("href").slice(1));
-  const target = document.getElementById(id);
-  if (target) {
-    contentEl.scrollTo({ top: target.offsetTop - 40, behavior: "smooth" });
+
+  const href = anchor.getAttribute("href");
+  if (!href) return;
+
+  // Internal anchor links
+  if (href.startsWith("#")) {
+    e.preventDefault();
+    const id = decodeURIComponent(href.slice(1));
+    const target = document.getElementById(id);
+    if (target) {
+      contentEl.scrollTo({ top: target.offsetTop - 40, behavior: "smooth" });
+    }
+    return;
+  }
+
+  // External links — open in default browser
+  if (href.startsWith("http://") || href.startsWith("https://")) {
+    e.preventDefault();
+    openUrl(href);
   }
 });
 
-// Check for initial file from CLI args via Tauri command
+// ── TOC Sidebar ───────────────────────────────────────────────────
+
+let tocVisible = false;
+
+function toggleToc() {
+  tocVisible = !tocVisible;
+  tocSidebar.hidden = !tocVisible;
+}
+
+function buildToc() {
+  tocList.innerHTML = "";
+  const headings = contentEl.querySelectorAll("h1, h2, h3, h4, h5, h6");
+  if (headings.length === 0) {
+    tocSidebar.hidden = true;
+    tocVisible = false;
+    return;
+  }
+
+  headings.forEach((h) => {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    const level = h.tagName.toLowerCase();
+    a.textContent = h.textContent.replace(/^#\s*/, "");
+    a.className = `toc-${level}`;
+    a.href = `#${h.id}`;
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      contentEl.scrollTo({ top: h.offsetTop - 40, behavior: "smooth" });
+    });
+    li.appendChild(a);
+    tocList.appendChild(li);
+  });
+
+  updateActiveTocItem();
+}
+
+function updateActiveTocItem() {
+  const headings = contentEl.querySelectorAll("h1, h2, h3, h4, h5, h6");
+  const links = tocList.querySelectorAll("a");
+  if (headings.length === 0) return;
+
+  const scrollTop = contentEl.scrollTop + 60;
+  let activeIndex = 0;
+  headings.forEach((h, i) => {
+    if (h.offsetTop <= scrollTop) activeIndex = i;
+  });
+
+  links.forEach((a, i) => {
+    a.classList.toggle("active", i === activeIndex);
+  });
+}
+
+// ── Search ────────────────────────────────────────────────────────
+
+let searchMatches = [];
+let searchCurrentIndex = -1;
+
+function openSearch() {
+  searchBar.hidden = false;
+  searchInput.focus();
+  searchInput.select();
+}
+
+function closeSearch() {
+  searchBar.hidden = true;
+  clearHighlights();
+  searchMatches = [];
+  searchCurrentIndex = -1;
+  searchCount.textContent = "";
+}
+
+function clearHighlights() {
+  const marks = contentEl.querySelectorAll(".search-highlight");
+  marks.forEach((mark) => {
+    const parent = mark.parentNode;
+    parent.replaceChild(document.createTextNode(mark.textContent), mark);
+    parent.normalize();
+  });
+}
+
+function performSearch(query) {
+  clearHighlights();
+  searchMatches = [];
+  searchCurrentIndex = -1;
+
+  if (!query) {
+    searchCount.textContent = "";
+    return;
+  }
+
+  const walker = document.createTreeWalker(
+    contentEl,
+    NodeFilter.SHOW_TEXT,
+    null,
+  );
+
+  const textNodes = [];
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (node.parentElement.closest("script, style, .search-bar")) continue;
+    textNodes.push(node);
+  }
+
+  const lowerQuery = query.toLowerCase();
+
+  textNodes.forEach((node) => {
+    const text = node.textContent;
+    const lower = text.toLowerCase();
+    let idx = lower.indexOf(lowerQuery);
+    if (idx === -1) return;
+
+    const frag = document.createDocumentFragment();
+    let lastIdx = 0;
+    while (idx !== -1) {
+      frag.appendChild(document.createTextNode(text.slice(lastIdx, idx)));
+      const mark = document.createElement("mark");
+      mark.className = "search-highlight";
+      mark.textContent = text.slice(idx, idx + query.length);
+      frag.appendChild(mark);
+      searchMatches.push(mark);
+      lastIdx = idx + query.length;
+      idx = lower.indexOf(lowerQuery, lastIdx);
+    }
+    frag.appendChild(document.createTextNode(text.slice(lastIdx)));
+    node.parentNode.replaceChild(frag, node);
+  });
+
+  if (searchMatches.length > 0) {
+    searchCurrentIndex = 0;
+    highlightCurrent();
+  }
+  updateSearchCount();
+}
+
+function highlightCurrent() {
+  searchMatches.forEach((m) => m.classList.remove("current"));
+  if (searchCurrentIndex >= 0 && searchCurrentIndex < searchMatches.length) {
+    const current = searchMatches[searchCurrentIndex];
+    current.classList.add("current");
+    current.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+function updateSearchCount() {
+  if (searchMatches.length === 0) {
+    searchCount.textContent = searchInput.value ? "0/0" : "";
+  } else {
+    searchCount.textContent = `${searchCurrentIndex + 1}/${searchMatches.length}`;
+  }
+}
+
+function searchNext() {
+  if (searchMatches.length === 0) return;
+  searchCurrentIndex = (searchCurrentIndex + 1) % searchMatches.length;
+  highlightCurrent();
+  updateSearchCount();
+}
+
+function searchPrev() {
+  if (searchMatches.length === 0) return;
+  searchCurrentIndex =
+    (searchCurrentIndex - 1 + searchMatches.length) % searchMatches.length;
+  highlightCurrent();
+  updateSearchCount();
+}
+
+let searchDebounce = null;
+searchInput.addEventListener("input", () => {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => performSearch(searchInput.value), 150);
+});
+
+searchInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.shiftKey ? searchPrev() : searchNext();
+    e.preventDefault();
+  }
+  if (e.key === "Escape") {
+    closeSearch();
+    e.preventDefault();
+  }
+});
+
+document.getElementById("search-next").addEventListener("click", searchNext);
+document.getElementById("search-prev").addEventListener("click", searchPrev);
+document.getElementById("search-close").addEventListener("click", closeSearch);
+
+// ── Copy as Markdown ──────────────────────────────────────────────
+
+document.addEventListener("copy", (e) => {
+  if (!currentMarkdown) return;
+
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed) return;
+
+  const selectedText = selection.toString();
+  if (!selectedText.trim()) return;
+
+  const idx = currentMarkdown.indexOf(selectedText.trim());
+  if (idx !== -1) {
+    const before = currentMarkdown.lastIndexOf("\n", idx);
+    const after = currentMarkdown.indexOf("\n", idx + selectedText.trim().length);
+    const start = before === -1 ? 0 : before + 1;
+    const end = after === -1 ? currentMarkdown.length : after;
+    e.clipboardData.setData("text/plain", currentMarkdown.slice(start, end));
+    e.preventDefault();
+  }
+});
+
+// ── Settings ──────────────────────────────────────────────────────
+
+const settingsPanel = document.getElementById("settings-panel");
+const settingFont = document.getElementById("setting-font");
+const settingTheme = document.getElementById("setting-theme");
+const sizeValue = document.getElementById("size-value");
+const lhValue = document.getElementById("lh-value");
+
+const FONT_THEMES = {
+  "literata-inter": {
+    body: '"Literata Variable", "Literata", Georgia, serif',
+    heading: '"Inter Variable", "Inter", -apple-system, Helvetica, Arial, sans-serif',
+    code: '"JetBrains Mono", ui-monospace, SFMono-Regular, monospace',
+  },
+  "lora-plex": {
+    body: '"Lora Variable", "Lora", Georgia, serif',
+    heading: '"IBM Plex Sans", -apple-system, Helvetica, Arial, sans-serif',
+    code: '"IBM Plex Mono", ui-monospace, SFMono-Regular, monospace',
+  },
+  "source": {
+    body: '"Source Serif 4 Variable", "Source Serif 4", Georgia, serif',
+    heading: '"Source Sans 3 Variable", "Source Sans 3", -apple-system, Helvetica, Arial, sans-serif',
+    code: '"Source Code Pro", ui-monospace, SFMono-Regular, monospace',
+  },
+  "merriweather-open": {
+    body: '"Merriweather Variable", "Merriweather", Georgia, serif',
+    heading: '"Open Sans Variable", "Open Sans", -apple-system, Helvetica, Arial, sans-serif',
+    code: '"Fira Code", ui-monospace, SFMono-Regular, monospace',
+  },
+  "system-serif": {
+    body: '"New York", "Iowan Old Style", "Apple Garamond", Baskerville, "Times New Roman", serif, "Apple Color Emoji", "Segoe UI Emoji"',
+    heading: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif',
+    code: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+  },
+  "system-sans": {
+    body: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
+    heading: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif',
+    code: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+  },
+  "system-mono": {
+    body: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+    heading: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+    code: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+  },
+};
+
+const defaults = { font: "literata-inter", fontSize: 17, lineHeight: 1.7, maxWidth: 820, theme: "auto" };
+
+function loadSettings() {
+  try {
+    return { ...defaults, ...JSON.parse(localStorage.getItem("yamv-settings")) };
+  } catch {
+    return { ...defaults };
+  }
+}
+
+function saveSettings(s) {
+  localStorage.setItem("yamv-settings", JSON.stringify(s));
+}
+
+function applySettings(s) {
+  const fontTheme = FONT_THEMES[s.font] || FONT_THEMES["literata-inter"];
+  document.body.style.fontFamily = fontTheme.body;
+  document.body.style.fontSize = s.fontSize + "px";
+  document.body.style.lineHeight = s.lineHeight;
+  contentEl.style.maxWidth = s.maxWidth + "px";
+
+  document.documentElement.style.setProperty("--heading-font", fontTheme.heading);
+  document.documentElement.style.setProperty("--code-font", fontTheme.code);
+
+  settingFont.value = s.font;
+  settingTheme.value = s.theme || "auto";
+  sizeValue.textContent = s.fontSize;
+  lhValue.textContent = s.lineHeight.toFixed(1);
+
+  document.querySelectorAll(".width-btn").forEach((btn) => {
+    btn.classList.toggle("active", parseInt(btn.dataset.width) === s.maxWidth);
+  });
+
+  applyTheme(s.theme || "auto");
+}
+
+let settings = loadSettings();
+applySettings(settings);
+
+function toggleSettings() {
+  settingsPanel.hidden = !settingsPanel.hidden;
+}
+
+settingTheme.addEventListener("change", () => {
+  settings.theme = settingTheme.value;
+  saveSettings(settings);
+  applySettings(settings);
+});
+
+settingFont.addEventListener("change", () => {
+  settings.font = settingFont.value;
+  saveSettings(settings);
+  applySettings(settings);
+});
+
+document.getElementById("size-up").addEventListener("click", () => {
+  settings.fontSize = Math.min(28, settings.fontSize + 1);
+  saveSettings(settings);
+  applySettings(settings);
+});
+
+document.getElementById("size-down").addEventListener("click", () => {
+  settings.fontSize = Math.max(12, settings.fontSize - 1);
+  saveSettings(settings);
+  applySettings(settings);
+});
+
+document.getElementById("lh-up").addEventListener("click", () => {
+  settings.lineHeight = Math.min(2.4, +(settings.lineHeight + 0.1).toFixed(1));
+  saveSettings(settings);
+  applySettings(settings);
+});
+
+document.getElementById("lh-down").addEventListener("click", () => {
+  settings.lineHeight = Math.max(1.2, +(settings.lineHeight - 0.1).toFixed(1));
+  saveSettings(settings);
+  applySettings(settings);
+});
+
+document.querySelectorAll(".width-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    settings.maxWidth = parseInt(btn.dataset.width);
+    saveSettings(settings);
+    applySettings(settings);
+  });
+});
+
+// ── Keyboard shortcuts ────────────────────────────────────────────
+
+document.addEventListener("keydown", (e) => {
+  const cmd = e.metaKey || e.ctrlKey;
+
+  // Cmd+O — open file
+  if (cmd && e.key === "o") {
+    e.preventDefault();
+    openFileDialog();
+  }
+  // Cmd+W — close file
+  if (cmd && e.key === "w") {
+    e.preventDefault();
+    if (currentFilePath) {
+      saveScrollPosition();
+      currentFilePath = "";
+      currentMarkdown = "";
+      currentDir = "";
+      showEmptyState();
+    }
+    return;
+  }
+  // Cmd+F — search
+  if (cmd && e.key === "f") {
+    e.preventDefault();
+    openSearch();
+  }
+  // Cmd+Shift+T or Cmd+\ — toggle TOC
+  if (cmd && (e.key === "\\" || (e.shiftKey && e.key === "t"))) {
+    e.preventDefault();
+    toggleToc();
+  }
+  // Cmd+, — toggle settings
+  if (cmd && e.key === ",") {
+    e.preventDefault();
+    toggleSettings();
+  }
+  // Cmd+? — toggle help
+  if (cmd && (e.key === "?" || (e.shiftKey && e.key === "/"))) {
+    e.preventDefault();
+    const help = document.getElementById("help-panel");
+    help.hidden = !help.hidden;
+  }
+  // Cmd+P — print
+  if (cmd && e.key === "p") {
+    e.preventDefault();
+    invoke("print_page");
+  }
+  // Cmd+= / Cmd+- — zoom (font size)
+  if (cmd && (e.key === "=" || e.key === "+")) {
+    e.preventDefault();
+    settings.fontSize = Math.min(28, settings.fontSize + 1);
+    saveSettings(settings);
+    applySettings(settings);
+  }
+  if (cmd && e.key === "-") {
+    e.preventDefault();
+    settings.fontSize = Math.max(12, settings.fontSize - 1);
+    saveSettings(settings);
+    applySettings(settings);
+  }
+  if (cmd && e.key === "0") {
+    e.preventDefault();
+    settings.fontSize = defaults.fontSize;
+    saveSettings(settings);
+    applySettings(settings);
+  }
+  // Escape — close panels
+  if (e.key === "Escape") {
+    if (!searchBar.hidden) closeSearch();
+    else if (!settingsPanel.hidden) settingsPanel.hidden = true;
+    else if (!document.getElementById("help-panel").hidden) document.getElementById("help-panel").hidden = true;
+  }
+});
+
+// ── Print styles ──────────────────────────────────────────────────
+// (defined in base.css @media print)
+
+// ── Init ──────────────────────────────────────────────────────────
+
 async function init() {
   const initialFile = await invoke("get_initial_file");
   if (initialFile) {
     await openFile(initialFile);
   } else {
+    // Try reopening last file
+    const lastFile = localStorage.getItem("yamv-last-file");
+    if (lastFile) {
+      try {
+        await openFile(lastFile);
+        return;
+      } catch {
+        // File may have been deleted, show empty state
+      }
+    }
     showEmptyState();
   }
 }
