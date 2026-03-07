@@ -1,28 +1,29 @@
-/* Nord Snow Storm + Bear-inspired light theme */
+/* Red Graphite — Bear-inspired light theme */
 
 :root[data-theme="light"],
 :root:not([data-theme]) {
-  /* Nord Snow Storm base */
-  --color-fg-default: #2e3440;        /* nord0 — primary text */
-  --color-fg-muted: #7b88a1;          /* softer polar night */
-  --color-fg-heading: #2e3440;        /* nord0 — headings */
-  --color-canvas-default: #f8f9fb;    /* warm snow storm */
-  --color-canvas-subtle: #eceff4;     /* nord6 — subtle backgrounds */
-  --color-border-default: #d8dee9;    /* nord5 */
-  --color-border-muted: #e5e9f0;      /* nord5 lighter */
-  --color-accent-fg: #5e81ac;         /* nord10 — links */
-  --color-danger-fg: #bf616a;         /* nord11 — red */
-  --color-success-fg: #a3be8c;        /* nord14 — green */
-  --color-attention-fg: #ebcb8b;      /* nord13 — yellow */
+  /* Backgrounds */
+  --color-fg-default: #2c2c2c;
+  --color-fg-muted: #969696;
+  --color-fg-heading: #2c2c2c;
+  --color-canvas-default: #fafafa;
+  --color-canvas-subtle: #f0f0f0;
+  --color-border-default: #d7d7d7;
+  --color-border-muted: #e5e5e5;
+  --color-accent-fg: #cb4d49;
+  --color-danger-fg: #cb4d49;
+  --color-success-fg: #448c27;
+  --color-attention-fg: #c58b00;
 
   /* Syntax highlighting */
-  --color-syntax-keyword: #5e81ac;    /* nord10 */
-  --color-syntax-string: #a3be8c;     /* nord14 */
-  --color-syntax-comment: #9ba5b7;    /* muted polar */
-  --color-syntax-function: #88c0d0;   /* nord8 */
-  --color-syntax-number: #b48ead;     /* nord15 */
-  --color-syntax-tag: #81a1c1;        /* nord9 */
-  --color-syntax-attr: #8fbcbb;       /* nord7 */
+  --color-syntax-keyword: #a0306f;
+  --color-syntax-string: #448c27;
+  --color-syntax-comment: #aaaaaa;
+  --color-syntax-function: #21709a;
+  --color-syntax-number: #7c4dff;
+  --color-mark-bg: rgba(203, 77, 73, 0.12);
+  --color-syntax-tag: #cb4d49;
+  --color-syntax-attr: #21709a;
 
   --heading-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue",
     Helvetica, Arial, sans-serif;
@@ -40,5 +41,5 @@ body:not([data-theme]) {
 /* Table striping — light */
 [data-theme="light"] .markdown-body table tr:nth-child(2n),
 :root:not([data-theme]) .markdown-body table tr:nth-child(2n) {
-  background-color: rgba(236, 239, 244, 0.5);
+  background-color: rgba(0, 0, 0, 0.025);
 }

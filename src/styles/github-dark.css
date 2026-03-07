@@ -1,27 +1,28 @@
-/* Nord Polar Night + Bear-inspired dark theme */
+/* Dark Graphite — Bear-inspired dark theme */
 
 :root[data-theme="dark"] {
-  /* Nord Polar Night base */
-  --color-fg-default: #d8dee9;        /* nord4 — primary text */
-  --color-fg-muted: #7b88a1;          /* softer polar night */
-  --color-fg-heading: #eceff4;        /* nord6 — bright headings */
-  --color-canvas-default: #242933;    /* slightly warmer than nord0 */
-  --color-canvas-subtle: #2e3440;     /* nord0 — subtle backgrounds */
-  --color-border-default: #3b4252;    /* nord1 */
-  --color-border-muted: #434c5e;      /* nord2 */
-  --color-accent-fg: #88c0d0;         /* nord8 — frost links */
-  --color-danger-fg: #bf616a;         /* nord11 — red */
-  --color-success-fg: #a3be8c;        /* nord14 — green */
-  --color-attention-fg: #ebcb8b;      /* nord13 — yellow */
+  /* Backgrounds */
+  --color-fg-default: #d8d8d8;
+  --color-fg-muted: #969696;
+  --color-fg-heading: #c6d5e0;
+  --color-canvas-default: #1c1e20;
+  --color-canvas-subtle: #292c2e;
+  --color-border-default: #3a3d40;
+  --color-border-muted: #4c4c4c;
+  --color-accent-fg: #74bef7;
+  --color-danger-fg: #e06c75;
+  --color-success-fg: #98c379;
+  --color-attention-fg: #e5c07b;
 
   /* Syntax highlighting */
-  --color-syntax-keyword: #81a1c1;    /* nord9 */
-  --color-syntax-string: #a3be8c;     /* nord14 */
-  --color-syntax-comment: #616e88;    /* nord3 brighter */
-  --color-syntax-function: #88c0d0;   /* nord8 */
-  --color-syntax-number: #b48ead;     /* nord15 */
-  --color-syntax-tag: #81a1c1;        /* nord9 */
-  --color-syntax-attr: #8fbcbb;       /* nord7 */
+  --color-syntax-keyword: #74bef7;
+  --color-syntax-string: #98c379;
+  --color-syntax-comment: #636d83;
+  --color-syntax-function: #61afef;
+  --color-syntax-number: #d19a66;
+  --color-mark-bg: rgba(116, 190, 247, 0.15);
+  --color-syntax-tag: #e06c75;
+  --color-syntax-attr: #56b6c2;
 
   --heading-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue",
     Helvetica, Arial, sans-serif;
@@ -37,5 +38,5 @@ body[data-theme="dark"] {
 
 /* Table striping — dark */
 [data-theme="dark"] .markdown-body table tr:nth-child(2n) {
-  background-color: rgba(46, 52, 64, 0.5);
+  background-color: rgba(255, 255, 255, 0.03);
 }

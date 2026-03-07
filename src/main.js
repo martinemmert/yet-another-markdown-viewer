@@ -202,8 +202,6 @@ function applyTheme(pref) {
   else if (pref === "dark") dark = true;
   else dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
 
-  document.getElementById("theme-light").disabled = dark;
-  document.getElementById("theme-dark").disabled = !dark;
   const theme = dark ? "dark" : "light";
   document.documentElement.setAttribute("data-theme", theme);
   document.body.setAttribute("data-theme", theme);
@@ -493,8 +491,8 @@ document.addEventListener("copy", (e) => {
 // ── Settings ──────────────────────────────────────────────────────
 
 const settingsPanel = document.getElementById("settings-panel");
+const settingsBackdrop = document.getElementById("settings-backdrop");
 const settingFont = document.getElementById("setting-font");
-const settingTheme = document.getElementById("setting-theme");
 const sizeValue = document.getElementById("size-value");
 const lhValue = document.getElementById("lh-value");
 
@@ -561,9 +559,12 @@ function applySettings(s) {
   document.documentElement.style.setProperty("--code-font", fontTheme.code);
 
   settingFont.value = s.font;
-  settingTheme.value = s.theme || "auto";
-  sizeValue.textContent = s.fontSize;
+  sizeValue.innerHTML = s.fontSize + "<small>px</small>";
   lhValue.textContent = s.lineHeight.toFixed(1);
+
+  document.querySelectorAll(".theme-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.themeVal === (s.theme || "auto"));
+  });
 
   document.querySelectorAll(".width-btn").forEach((btn) => {
     btn.classList.toggle("active", parseInt(btn.dataset.width) === s.maxWidth);
@@ -576,13 +577,27 @@ let settings = loadSettings();
 applySettings(settings);
 
 function toggleSettings() {
-  settingsPanel.hidden = !settingsPanel.hidden;
+  const show = settingsPanel.hidden;
+  settingsPanel.hidden = !show;
+  settingsBackdrop.hidden = !show;
 }
 
-settingTheme.addEventListener("change", () => {
-  settings.theme = settingTheme.value;
-  saveSettings(settings);
-  applySettings(settings);
+document.getElementById("settings-close").addEventListener("click", () => {
+  settingsPanel.hidden = true;
+  settingsBackdrop.hidden = true;
+});
+
+settingsBackdrop.addEventListener("click", () => {
+  settingsPanel.hidden = true;
+  settingsBackdrop.hidden = true;
+});
+
+document.querySelectorAll(".theme-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    settings.theme = btn.dataset.themeVal;
+    saveSettings(settings);
+    applySettings(settings);
+  });
 });
 
 settingFont.addEventListener("change", () => {
@@ -693,7 +708,7 @@ document.addEventListener("keydown", (e) => {
   // Escape — close panels
   if (e.key === "Escape") {
     if (!searchBar.hidden) closeSearch();
-    else if (!settingsPanel.hidden) settingsPanel.hidden = true;
+    else if (!settingsPanel.hidden) { settingsPanel.hidden = true; settingsBackdrop.hidden = true; }
     else if (!document.getElementById("help-panel").hidden) document.getElementById("help-panel").hidden = true;
   }
 });
