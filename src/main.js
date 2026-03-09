@@ -185,6 +185,16 @@ async function openFile(path) {
   }
 }
 
+function closeFile() {
+  if (!currentFilePath) return;
+  saveScrollPosition();
+  currentFilePath = "";
+  currentMarkdown = "";
+  currentDir = "";
+  localStorage.removeItem("yamv-last-file");
+  showEmptyState();
+}
+
 async function openFileDialog() {
   const path = await openDialog({
     filters: [{ name: "Markdown", extensions: ["md", "markdown", "mdx", "mdown", "mkd"] }],
@@ -236,7 +246,7 @@ listen("menu-action", (event) => {
   const action = event.payload;
   const actions = {
     "open": () => openFileDialog(),
-    "close-file": () => { if (currentFilePath) { saveScrollPosition(); currentFilePath = ""; currentMarkdown = ""; currentDir = ""; showEmptyState(); } },
+    "close-file": () => closeFile(),
     "print": () => invoke("print_page"),
     "find": () => openSearch(),
     "toggle-toc": () => toggleToc(),
@@ -661,13 +671,7 @@ document.addEventListener("keydown", (e) => {
   // Cmd+W — close file
   if (cmd && e.key === "w") {
     e.preventDefault();
-    if (currentFilePath) {
-      saveScrollPosition();
-      currentFilePath = "";
-      currentMarkdown = "";
-      currentDir = "";
-      showEmptyState();
-    }
+    closeFile();
     return;
   }
   // Cmd+F — search
@@ -740,7 +744,7 @@ async function init() {
         await openFile(lastFile);
         return;
       } catch {
-        // File may have been deleted, show empty state
+        localStorage.removeItem("yamv-last-file");
       }
     }
     showEmptyState();
