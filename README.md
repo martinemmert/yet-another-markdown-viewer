@@ -35,11 +35,22 @@ Download the latest release for your platform from the [Releases](https://github
 
 1. Download the `.dmg` file
 2. Drag **YAMV** into your Applications folder
-3. On first launch, macOS may block the app because it's unsigned. To allow it:
+3. On first launch, macOS will show a warning that the app is from an unidentified developer. To open it anyway:
+   - **Right-click** (or Control-click) on **YAMV** in your Applications folder and select **Open**
+   - In the dialog that appears, click **Open** to confirm
+   - You only need to do this once — after that, the app opens normally
+
+   If that doesn't work, go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to the message about YAMV.
+
+   <details>
+   <summary>Alternative: using the Terminal</summary>
+
+   Open **Terminal** (found in Applications → Utilities) and paste:
    ```sh
    xattr -cr /Applications/YAMV.app
    ```
-   Then open the app again.
+   Press Enter, then open the app again.
+   </details>
 
 ### Windows
 
