@@ -9,6 +9,11 @@
     "opener:default",
     "dialog:default",
     "core:event:default",
-    "window-state:default"
+    "window-state:default",
+    "store:default",
+    "cli:default",
+    "updater:default",
+    "deep-link:default",
+    "log:default"
   ]
 }

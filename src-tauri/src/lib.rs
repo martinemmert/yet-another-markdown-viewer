@@ -5,6 +5,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, Manager};
+use tauri_plugin_log::{Target, TargetKind};
 
 struct AppState {
     watcher: Mutex<Option<notify_debouncer_mini::Debouncer<notify_debouncer_mini::notify::RecommendedWatcher>>>,
@@ -21,8 +22,17 @@ struct FileContent {
 #[tauri::command]
 fn open_file(path: String, app: AppHandle) -> Result<FileContent, String> {
     let path = PathBuf::from(&path);
+
+    // Try direct canonicalize first, then parent dir fallback for tauri dev CWD quirk
     let path = path
         .canonicalize()
+        .or_else(|_| {
+            if let Ok(cwd) = std::env::current_dir() {
+                cwd.join("..").join(&path).canonicalize()
+            } else {
+                Err(std::io::Error::new(std::io::ErrorKind::NotFound, "not found"))
+            }
+        })
         .map_err(|e| format!("Failed to resolve path: {}", e))?;
 
     if !path.exists() {
@@ -59,26 +69,6 @@ fn open_file(path: String, app: AppHandle) -> Result<FileContent, String> {
 fn print_page(app: AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.print();
-    }
-}
-
-#[tauri::command]
-fn get_initial_file() -> Option<String> {
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() > 1 {
-        let path = PathBuf::from(&args[1]);
-        if let Ok(abs) = path.canonicalize() {
-            return Some(abs.to_string_lossy().to_string());
-        }
-        if let Ok(cwd) = std::env::current_dir() {
-            let from_parent = cwd.join("..").join(&args[1]);
-            if let Ok(abs) = from_parent.canonicalize() {
-                return Some(abs.to_string_lossy().to_string());
-            }
-        }
-        Some(args[1].clone())
-    } else {
-        None
     }
 }
 
@@ -132,7 +122,7 @@ fn start_watching(app: &AppHandle, path: &PathBuf) {
             *watcher_guard = Some(d);
         }
         Err(e) => {
-            eprintln!("Failed to start file watcher: {}", e);
+            log::error!("Failed to start file watcher: {}", e);
         }
     }
 }
@@ -188,13 +178,27 @@ fn build_menu(app: &AppHandle) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::E
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .level(log::LevelFilter::Info)
+                .targets([
+                    Target::new(TargetKind::Stdout),
+                    Target::new(TargetKind::LogDir { file_name: None }),
+                    Target::new(TargetKind::Webview),
+                ])
+                .build(),
+        )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_cli::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_deep_link::init())
         .manage(AppState {
             watcher: Mutex::new(None),
             current_file: Mutex::new(None),
         })
-        .invoke_handler(tauri::generate_handler![open_file, get_initial_file, print_page])
+        .invoke_handler(tauri::generate_handler![open_file, print_page])
         .setup(|app| {
             let handle = app.handle().clone();
             if let Some(window) = app.get_webview_window("main") {

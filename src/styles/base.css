@@ -22,7 +22,7 @@ html, body {
 /* App layout — sidebar + content */
 #app-layout {
   display: flex;
-  padding-top: 40px;
+  padding-top: 52px;
   height: 100vh;
 }
 
@@ -113,7 +113,7 @@ html, body {
 /* Search bar */
 .search-bar {
   position: fixed;
-  top: 40px;
+  top: 52px;
   right: 16px;
   z-index: 20;
   display: flex;
@@ -718,7 +718,7 @@ html, body {
   top: 0;
   left: 0;
   right: 0;
-  height: 40px;
+  height: 52px;
   z-index: 10;
   background: var(--color-canvas-default);
   display: flex;
@@ -730,6 +730,11 @@ html, body {
   color: var(--color-fg-muted);
   user-select: none;
   -webkit-user-select: none;
+  transition: background 0.2s ease;
+}
+
+.drag-region:hover {
+  background: var(--color-canvas-subtle);
 }
 
 /* Titlebar layout */
@@ -783,21 +788,52 @@ html, body {
 
 .recent-files li {
   margin: 0;
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  transition: background 0.1s ease;
+}
+
+.recent-files li:hover {
+  background: var(--color-canvas-subtle);
 }
 
 .recent-files a {
   display: block;
+  flex: 1;
   padding: 6px 12px;
   color: var(--color-accent-fg);
   text-decoration: none;
   border-radius: 6px;
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.1s ease;
 }
 
-.recent-files a:hover {
-  background: var(--color-canvas-subtle);
+.recent-remove {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  border: none;
+  background: transparent;
+  color: var(--color-fg-muted);
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.1s ease, background 0.1s ease;
+}
+
+.recent-files li:hover .recent-remove {
+  display: flex;
+}
+
+.recent-remove:hover {
+  color: var(--color-fg-default);
+  background: var(--color-border-default);
 }
 
 .recent-files .recent-path {

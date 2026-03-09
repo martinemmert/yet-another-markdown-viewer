@@ -3,6 +3,10 @@ import { listen } from "@tauri-apps/api/event";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { Store } from "@tauri-apps/plugin-store";
+import { getMatches } from "@tauri-apps/plugin-cli";
+import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
+import { attachConsole } from "@tauri-apps/plugin-log";
 import { render, postRender } from "./renderer.js";
 import "katex/dist/katex.min.css";
 
@@ -25,6 +29,36 @@ import "@fontsource-variable/merriweather";
 import "@fontsource-variable/open-sans";
 import "@fontsource/fira-code/400.css";
 import "@fontsource/fira-code/700.css";
+
+// ── Store ────────────────────────────────────────────────────────
+
+const store = await Store.load("settings.json");
+
+// One-time migration from localStorage
+async function migrateFromLocalStorage() {
+  if (await store.get("migrated")) return;
+  try {
+    const settings = localStorage.getItem("yamv-settings");
+    if (settings) await store.set("settings", JSON.parse(settings));
+    const recent = localStorage.getItem("yamv-recent");
+    if (recent) await store.set("recent", JSON.parse(recent));
+    const scroll = localStorage.getItem("yamv-scroll");
+    if (scroll) await store.set("scroll-positions", JSON.parse(scroll));
+    const lastFile = localStorage.getItem("yamv-last-file");
+    if (lastFile) await store.set("last-file", lastFile);
+    const welcomed = localStorage.getItem("yamv-welcomed");
+    if (welcomed) await store.set("welcomed", true);
+  } catch { /* ignore migration errors */ }
+  await store.set("migrated", true);
+  await store.save();
+}
+await migrateFromLocalStorage();
+
+// ── Log ──────────────────────────────────────────────────────────
+
+await attachConsole();
+
+// ── DOM Elements ─────────────────────────────────────────────────
 
 const contentEl = document.getElementById("content");
 const scrollEl = document.getElementById("content-scroll");
@@ -55,21 +89,20 @@ function readingTime(words) {
 
 // ── Recent files ──────────────────────────────────────────────────
 
-function getRecentFiles() {
-  try {
-    return JSON.parse(localStorage.getItem("yamv-recent") || "[]");
-  } catch { return []; }
+async function getRecentFiles() {
+  return (await store.get("recent")) ?? [];
 }
 
-function addRecentFile(path, filename) {
-  let recent = getRecentFiles().filter((r) => r.path !== path);
+async function addRecentFile(path, filename) {
+  let recent = (await getRecentFiles()).filter((r) => r.path !== path);
   recent.unshift({ path, filename, time: Date.now() });
   recent = recent.slice(0, 10);
-  localStorage.setItem("yamv-recent", JSON.stringify(recent));
+  await store.set("recent", recent);
+  store.save();
 }
 
-function renderRecentFiles() {
-  const recent = getRecentFiles();
+async function renderRecentFiles() {
+  const recent = await getRecentFiles();
   const container = document.getElementById("recent-files");
   const list = document.getElementById("recent-list");
   if (recent.length === 0) {
@@ -90,22 +123,36 @@ function renderRecentFiles() {
       e.preventDefault();
       openFile(r.path);
     });
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "recent-remove";
+    removeBtn.textContent = "\u00d7";
+    removeBtn.title = "Remove from list";
+    removeBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const updated = (await getRecentFiles()).filter((f) => f.path !== r.path);
+      await store.set("recent", updated);
+      store.save();
+      renderRecentFiles();
+    });
     li.appendChild(a);
+    li.appendChild(removeBtn);
     list.appendChild(li);
   });
 }
 
 // ── Scroll position memory ────────────────────────────────────────
 
-function saveScrollPosition() {
+async function saveScrollPosition() {
   if (!currentFilePath) return;
-  const positions = JSON.parse(localStorage.getItem("yamv-scroll") || "{}");
+  const positions = (await store.get("scroll-positions")) ?? {};
   positions[currentFilePath] = scrollEl.scrollTop;
-  localStorage.setItem("yamv-scroll", JSON.stringify(positions));
+  await store.set("scroll-positions", positions);
+  store.save();
 }
 
-function restoreScrollPosition(path) {
-  const positions = JSON.parse(localStorage.getItem("yamv-scroll") || "{}");
+async function restoreScrollPosition(path) {
+  const positions = (await store.get("scroll-positions")) ?? {};
   if (positions[path]) {
     requestAnimationFrame(() => {
       scrollEl.scrollTop = positions[path];
@@ -141,8 +188,8 @@ function resolveImages() {
 
 // ── Content display ───────────────────────────────────────────────
 
-function showContent(content, dir, filename, filePath) {
-  saveScrollPosition();
+async function showContent(content, dir, filename, filePath) {
+  await saveScrollPosition();
   currentDir = dir;
   currentMarkdown = content;
   currentFilePath = filePath || dir + "/" + filename;
@@ -161,38 +208,40 @@ function showContent(content, dir, filename, filePath) {
   resolveImages();
   postRender(contentEl);
   buildToc();
-  restoreScrollPosition(currentFilePath);
+  await restoreScrollPosition(currentFilePath);
 
   // Track recent files and last opened
-  addRecentFile(currentFilePath, filename);
-  localStorage.setItem("yamv-last-file", currentFilePath);
+  await addRecentFile(currentFilePath, filename);
+  await store.set("last-file", currentFilePath);
+  store.save();
 }
 
-function showEmptyState() {
+async function showEmptyState() {
   appLayout.style.display = "none";
   emptyStateEl.style.display = "flex";
   titlebarText.textContent = "YAMV";
   titlebarStats.textContent = "";
-  renderRecentFiles();
+  await renderRecentFiles();
 }
 
 async function openFile(path) {
   try {
     const result = await invoke("open_file", { path });
-    showContent(result.content, result.dir, result.filename, path);
+    await showContent(result.content, result.dir, result.filename, path);
   } catch (e) {
     console.error("Failed to open file:", e);
   }
 }
 
-function closeFile() {
+async function closeFile() {
   if (!currentFilePath) return;
-  saveScrollPosition();
+  await saveScrollPosition();
   currentFilePath = "";
   currentMarkdown = "";
   currentDir = "";
-  localStorage.removeItem("yamv-last-file");
-  showEmptyState();
+  await store.delete("last-file");
+  store.save();
+  await showEmptyState();
 }
 
 async function openFileDialog() {
@@ -229,8 +278,8 @@ function applyTheme(pref) {
 
 window
   .matchMedia("(prefers-color-scheme: dark)")
-  .addEventListener("change", () => {
-    const s = loadSettings();
+  .addEventListener("change", async () => {
+    const s = await loadSettings();
     if (!s.theme || s.theme === "auto") applyTheme("auto");
   });
 
@@ -271,6 +320,20 @@ listen("tauri://drag-drop", async (event) => {
     }
   }
 });
+
+// ── Deep links ───────────────────────────────────────────────────
+
+try {
+  await onOpenUrl((urls) => {
+    for (const url of urls) {
+      try {
+        const parsed = new URL(url);
+        const filePath = parsed.searchParams.get("path") || decodeURIComponent(parsed.pathname);
+        if (filePath) openFile(filePath);
+      } catch { /* ignore malformed URLs */ }
+    }
+  });
+} catch { /* deep-link may not be available in dev */ }
 
 // ── External links ────────────────────────────────────────────────
 
@@ -556,16 +619,14 @@ const FONT_THEMES = {
 
 const defaults = { font: "literata-inter", fontSize: 17, lineHeight: 1.7, maxWidth: 820, theme: "auto" };
 
-function loadSettings() {
-  try {
-    return { ...defaults, ...JSON.parse(localStorage.getItem("yamv-settings")) };
-  } catch {
-    return { ...defaults };
-  }
+async function loadSettings() {
+  const saved = await store.get("settings");
+  return { ...defaults, ...(saved || {}) };
 }
 
-function saveSettings(s) {
-  localStorage.setItem("yamv-settings", JSON.stringify(s));
+async function saveSettings(s) {
+  await store.set("settings", s);
+  store.save();
 }
 
 function applySettings(s) {
@@ -593,7 +654,7 @@ function applySettings(s) {
   applyTheme(s.theme || "auto");
 }
 
-let settings = loadSettings();
+let settings = await loadSettings();
 applySettings(settings);
 
 function toggleSettings() {
@@ -730,24 +791,151 @@ document.addEventListener("keydown", (e) => {
 // ── Print styles ──────────────────────────────────────────────────
 // (defined in base.css @media print)
 
+// ── Welcome ───────────────────────────────────────────────────────
+
+const WELCOME_MD = `![YAMV](/icon.png)
+
+# Welcome to YAMV 👋
+
+Thanks for trying out **YAMV** — the **Yet Another Markdown Viewer**.
+
+YAMV does one thing and does it well: it lets you ==read markdown files==, beautifully rendered, right on your desktop. No editing, no distractions — just your words, nicely formatted.
+
+If you write markdown in VS Code, Vim, Obsidian, or any text editor, YAMV is your reading companion. Keep it open next to your editor and it will ==automatically update== whenever you save — no manual refreshing needed.
+
+Think of it as a dedicated reading pane for all your \`.md\` files: READMEs, notes, documentation, journals, or anything else you write in markdown.
+
+---
+
+## How to open a file
+
+There are a few ways to get started:
+
+- **Drag & drop** a \`.md\` file onto this window
+- Use **File → Open** from the menu bar (or press \`⌘O\`)
+- From the terminal: \`yamv path/to/file.md\`
+- Set YAMV as your default app for \`.md\` files and just double-click
+
+## Navigate with the outline
+
+Press \`⌘\\\` or use **View → Table of Contents** to open the outline sidebar. It lists all headings in the document and highlights where you are as you scroll — try it now on this page!
+
+## What YAMV can render
+
+YAMV supports the full range of markdown you'd expect — and then some. Here are a few examples:
+
+### Code with syntax highlighting
+
+\`\`\`javascript
+function greet(name) {
+  return \\\`Hello, \\\${name}! Welcome to YAMV.\\\`;
+}
+\`\`\`
+
+### Math with KaTeX
+
+Inline math like $E = mc^2$ works, and so do block equations:
+
+$$\\\\sum_{i=1}^{n} i = \\\\frac{n(n+1)}{2}$$
+
+### Mermaid diagrams
+
+\`\`\`mermaid
+graph LR
+  A[Write Markdown] --> B[Save File]
+  B --> C[YAMV Auto-Reloads]
+  C --> D[Read Beautifully]
+\`\`\`
+
+### Tables, tasks, and more
+
+| Feature | Supported |
+|---|:---:|
+| GitHub-flavored markdown | :white_check_mark: |
+| ==Highlighted text== | :white_check_mark: |
+| Footnotes[^1] | :white_check_mark: |
+| Emoji :wave: | :white_check_mark: |
+| Task lists | :white_check_mark: |
+
+- [x] Render markdown beautifully
+- [x] Live-reload on file changes
+- [ ] Open your first file!
+
+[^1]: Like this one — hover or scroll down to see it.
+
+## Make it yours
+
+Open **Settings** with \`⌘,\` to customize:
+
+- **Theme** — light, dark, or follow your system
+- **Typography** — choose from several carefully paired font combinations
+- **Text size & line height** — adjust to your reading preference
+- **Content width** — narrow, medium, or wide
+
+## Handy shortcuts
+
+| Shortcut | Action |
+|---|---|
+| \`⌘O\` | Open file |
+| \`⌘W\` | Close file |
+| \`⌘F\` | Search in document |
+| \`⌘,\` | Open settings |
+| \`⌘\\\` | Toggle table of contents sidebar |
+| \`⌘+\` / \`⌘-\` | Zoom in / out |
+| \`⌘0\` | Reset zoom |
+| \`⌘P\` | Print |
+
+---
+
+> That's it! Drop a markdown file onto this window to start reading. This welcome page won't show up again — you'll see your recent files here instead.
+`;
+
+async function showWelcome() {
+  titlebarText.textContent = "Welcome";
+  emptyStateEl.style.display = "none";
+  appLayout.style.display = "flex";
+  contentEl.style.display = "block";
+  titlebarStats.textContent = "";
+  contentEl.innerHTML = render(WELCOME_MD);
+  postRender(contentEl);
+  buildToc();
+  await store.set("welcomed", true);
+  store.save();
+}
+
 // ── Init ──────────────────────────────────────────────────────────
 
 async function init() {
-  const initialFile = await invoke("get_initial_file");
+  // Check CLI args via the cli plugin
+  let initialFile = null;
+  try {
+    const matches = await getMatches();
+    const fileArg = matches.args?.file?.value;
+    if (fileArg) initialFile = fileArg;
+  } catch {
+    // CLI plugin may not be available
+  }
+
   if (initialFile) {
     await openFile(initialFile);
   } else {
     // Try reopening last file
-    const lastFile = localStorage.getItem("yamv-last-file");
+    const lastFile = await store.get("last-file");
     if (lastFile) {
       try {
         await openFile(lastFile);
         return;
       } catch {
-        localStorage.removeItem("yamv-last-file");
+        await store.delete("last-file");
+        store.save();
       }
     }
-    showEmptyState();
+    // Show welcome on first boot, empty state otherwise
+    if (!(await store.get("welcomed"))) {
+      await showWelcome();
+    } else {
+      await showEmptyState();
+    }
   }
 }
 
