@@ -670,10 +670,53 @@ const appPlatform = platform();
 const isDev = window.location.hostname === "localhost";
 document.getElementById("settings-version").textContent = `YAMV v${appVersion} (${appPlatform}-${appArch}${isDev ? ", dev" : ""})`;
 
+// CLI install
+const cliStatus = document.getElementById("cli-status");
+const cliBtn = document.getElementById("cli-install-btn");
+
+async function updateCliStatus() {
+  try {
+    const installed = await invoke("check_cli_installed");
+    if (installed) {
+      cliStatus.textContent = "Installed at /usr/local/bin/yamv";
+      cliStatus.className = "cli-status installed";
+      cliBtn.textContent = "Uninstall";
+      cliBtn.className = "cli-btn uninstall";
+      cliBtn.disabled = false;
+    } else {
+      cliStatus.textContent = "Not installed";
+      cliStatus.className = "cli-status";
+      cliBtn.textContent = "Install";
+      cliBtn.className = "cli-btn";
+      cliBtn.disabled = false;
+    }
+  } catch {
+    cliStatus.textContent = "Unable to check";
+    cliBtn.disabled = true;
+  }
+}
+
+cliBtn.addEventListener("click", async () => {
+  const isInstalled = cliBtn.textContent === "Uninstall";
+  cliBtn.disabled = true;
+  cliBtn.textContent = isInstalled ? "Removing…" : "Installing…";
+  try {
+    if (isInstalled) {
+      await invoke("uninstall_cli");
+    } else {
+      await invoke("install_cli");
+    }
+  } catch (e) {
+    console.error("CLI operation failed:", e);
+  }
+  await updateCliStatus();
+});
+
 function toggleSettings() {
   const show = settingsPanel.hidden;
   settingsPanel.hidden = !show;
   settingsBackdrop.hidden = !show;
+  if (show) updateCliStatus();
 }
 
 document.getElementById("settings-close").addEventListener("click", () => {

@@ -533,6 +533,71 @@ html, body {
   margin-bottom: 0;
 }
 
+/* CLI install */
+.settings-cli-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cli-status {
+  font-size: 12px;
+  color: var(--color-fg-muted);
+}
+
+.cli-status.installed {
+  color: var(--color-syntax-string);
+}
+
+.cli-btn {
+  border: 1px solid var(--color-border-default);
+  background: var(--color-canvas-subtle);
+  color: var(--color-fg-default);
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.cli-btn:hover:not(:disabled) {
+  background: var(--color-canvas-default);
+  border-color: var(--color-fg-muted);
+}
+
+.cli-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.cli-btn.uninstall {
+  color: var(--color-danger-fg);
+  border-color: var(--color-danger-fg);
+  background: transparent;
+}
+
+.cli-btn.uninstall:hover:not(:disabled) {
+  background: rgba(203, 77, 73, 0.08);
+}
+
+.cli-hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--color-fg-muted);
+  line-height: 1.4;
+}
+
+.cli-hint code {
+  font-size: 10px;
+  padding: 1px 4px;
+  background: var(--color-canvas-subtle);
+  border-radius: 3px;
+}
+
 .settings-version {
   margin-top: 16px;
   padding-top: 12px;

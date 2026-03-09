@@ -72,6 +72,66 @@ fn print_page(app: AppHandle) {
     }
 }
 
+#[tauri::command]
+fn check_cli_installed() -> bool {
+    let link = PathBuf::from("/usr/local/bin/yamv");
+    link.exists()
+}
+
+#[tauri::command]
+fn install_cli() -> Result<String, String> {
+    let binary = std::env::current_exe().map_err(|e| format!("Failed to find binary: {}", e))?;
+    let link = "/usr/local/bin/yamv";
+
+    // Use osascript to run ln -sf with admin privileges
+    let script = format!(
+        "do shell script \"ln -sf '{}' '{}'\" with administrator privileges",
+        binary.display(),
+        link
+    );
+    let output = std::process::Command::new("osascript")
+        .arg("-e")
+        .arg(&script)
+        .output()
+        .map_err(|e| format!("Failed to run osascript: {}", e))?;
+
+    if output.status.success() {
+        Ok("CLI installed successfully".to_string())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("User canceled") || stderr.contains("-128") {
+            Err("Installation cancelled".to_string())
+        } else {
+            Err(format!("Failed to create symlink: {}", stderr))
+        }
+    }
+}
+
+#[tauri::command]
+fn uninstall_cli() -> Result<String, String> {
+    let link = "/usr/local/bin/yamv";
+    let script = format!(
+        "do shell script \"rm -f '{}'\" with administrator privileges",
+        link
+    );
+    let output = std::process::Command::new("osascript")
+        .arg("-e")
+        .arg(&script)
+        .output()
+        .map_err(|e| format!("Failed to run osascript: {}", e))?;
+
+    if output.status.success() {
+        Ok("CLI uninstalled successfully".to_string())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("User canceled") || stderr.contains("-128") {
+            Err("Uninstall cancelled".to_string())
+        } else {
+            Err(format!("Failed to remove symlink: {}", stderr))
+        }
+    }
+}
+
 fn start_watching(app: &AppHandle, path: &PathBuf) {
     let state = app.state::<AppState>();
     let app_handle = app.clone();
@@ -202,7 +262,7 @@ pub fn run() {
             watcher: Mutex::new(None),
             current_file: Mutex::new(None),
         })
-        .invoke_handler(tauri::generate_handler![open_file, print_page])
+        .invoke_handler(tauri::generate_handler![open_file, print_page, check_cli_installed, install_cli, uninstall_cli])
         .setup(|app| {
             let handle = app.handle().clone();
             if let Some(window) = app.get_webview_window("main") {
