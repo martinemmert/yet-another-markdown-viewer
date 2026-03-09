@@ -533,6 +533,15 @@ html, body {
   margin-bottom: 0;
 }
 
+.settings-version {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-muted);
+  font-size: 11px;
+  color: var(--color-fg-muted);
+  text-align: center;
+}
+
 .settings-group label {
   display: block;
   font-size: 11px;

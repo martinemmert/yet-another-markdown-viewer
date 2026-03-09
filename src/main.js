@@ -9,6 +9,8 @@ import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import { attachConsole } from "@tauri-apps/plugin-log";
 import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { getVersion } from "@tauri-apps/api/app";
+import { arch, platform } from "@tauri-apps/plugin-os";
 import { render, postRender } from "./renderer.js";
 import "katex/dist/katex.min.css";
 
@@ -659,6 +661,13 @@ function applySettings(s) {
 
 let settings = await loadSettings();
 applySettings(settings);
+
+// Show version in settings
+const appVersion = await getVersion();
+const appArch = arch();
+const appPlatform = platform();
+const isDev = window.location.hostname === "localhost";
+document.getElementById("settings-version").textContent = `YAMV v${appVersion} (${appPlatform}-${appArch}${isDev ? ", dev" : ""})`;
 
 function toggleSettings() {
   const show = settingsPanel.hidden;

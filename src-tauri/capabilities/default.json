@@ -15,6 +15,7 @@
     "updater:default",
     "deep-link:default",
     "log:default",
-    "process:default"
+    "process:default",
+    "os:default"
   ]
 }
