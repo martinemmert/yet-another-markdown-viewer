@@ -308,6 +308,7 @@ listen("menu-action", (event) => {
     "zoom-out": () => { settings.fontSize = Math.max(12, settings.fontSize - 1); saveSettings(settings); applySettings(settings); },
     "zoom-reset": () => { settings.fontSize = defaults.fontSize; saveSettings(settings); applySettings(settings); },
     "check-update": () => checkForUpdates(false),
+    "show-welcome": () => showWelcome(),
     "show-help": () => { const h = document.getElementById("help-panel"); h.hidden = !h.hidden; },
   };
   if (actions[action]) actions[action]();
