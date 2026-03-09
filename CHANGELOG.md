@@ -4,6 +4,49 @@ All notable changes to YAMV are documented in this file.
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-03-09
+
+### Changed
+- App identifier changed from `com.yamv.viewer` to `de.martinemmert.projects.yamv`
+  - **Note:** App data directory moves to `~/Library/Application Support/de.martinemmert.projects.yamv/`. Existing settings will not carry over automatically.
+
+## [0.5.0] — 2026-03-09
+
+### Added
+- Auto-updater with signed releases — checks on startup, update banner with download/install/relaunch
+- "Check for Updates…" menu item under YAMV menu
+- "Welcome Guide" menu item under Help to re-show the welcome page
+- Welcome page on first launch with feature overview and interactive demos
+- Version and architecture display in settings panel
+- Delete button on recent files list entries
+- `yamv` deep-link URL scheme support
+- CLI file opening via `yamv file.md` (using tauri-plugin-cli)
+
+### Changed
+- Settings persistence moved from localStorage to Tauri Store plugin (with one-time migration)
+- Logging via tauri-plugin-log (stdout, log file, webview console)
+- Titlebar drag zone enlarged (52px) with subtle hover effect
+- Welcome page icon made transparent for dark mode compatibility
+
+### Infrastructure
+- Signed release builds with tauri-plugin-updater
+- Added plugins: store, cli, updater, deep-link, log, process, os
+- GitHub Actions release workflow includes signing environment variables
+- README with installation instructions for non-technical macOS users
+
+## [0.4.0] — 2026-03-08
+
+### Added
+- Custom app icon
+- Project README with feature list and installation instructions
+
+### Fixed
+- Scrollbar positioning moved to window edge
+- Mermaid theme switching on light/dark toggle
+- Layout polish and spacing improvements
+
+## [0.3.0] — 2026-03-08
+
 ### Added
 - Bear-inspired themes: "Red Graphite" (light) and "Dark Graphite" (dark), replacing the Nord palette
 - Custom Mermaid diagram themes matching the light/dark color schemes
@@ -11,7 +54,6 @@ All notable changes to YAMV are documented in this file.
 - Settings close button and click-outside-to-dismiss
 - `==highlighted text==` support via markdown-it-mark plugin with theme-aware styling
 - Comprehensive test document showcasing all supported features
-- Serena project configuration for AI-assisted development
 
 ### Changed
 - Theme switching now uses CSS `[data-theme]` attribute selectors instead of toggling stylesheet `disabled` state — fixes dark theme not applying in production builds
