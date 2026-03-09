@@ -843,7 +843,68 @@ html, body {
   margin-top: 2px;
 }
 
-/* Scrollbar */
+/* Update banner */
+.update-banner {
+  position: fixed;
+  top: 52px;
+  left: 0;
+  right: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--color-accent-fg);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
+    Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.update-banner[hidden] {
+  display: none;
+}
+
+.update-banner span {
+  flex: 1;
+}
+
+.update-btn {
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.update-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.update-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.update-dismiss {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.update-dismiss:hover {
+  color: #fff;
+}
 
 /* ── Print ─────────────────────────────────────────────────────── */
 @media print {
@@ -854,6 +915,7 @@ html, body {
   .help-panel,
   .toc-sidebar,
   .empty-state,
+  .update-banner,
   .header-anchor {
     display: none !important;
   }

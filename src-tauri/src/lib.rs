@@ -130,6 +130,7 @@ fn start_watching(app: &AppHandle, path: &PathBuf) {
 fn build_menu(app: &AppHandle) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::Error> {
     let app_menu = SubmenuBuilder::new(app, "YAMV")
         .item(&PredefinedMenuItem::about(app, Some("About YAMV"), None)?)
+        .item(&MenuItemBuilder::with_id("check-update", "Check for Updates…").build(app)?)
         .separator()
         .item(&MenuItemBuilder::with_id("settings", "Settings…").accelerator("CmdOrCtrl+,").build(app)?)
         .separator()
@@ -194,6 +195,7 @@ pub fn run() {
         .plugin(tauri_plugin_cli::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_process::init())
         .manage(AppState {
             watcher: Mutex::new(None),
             current_file: Mutex::new(None),

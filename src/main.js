@@ -7,6 +7,8 @@ import { Store } from "@tauri-apps/plugin-store";
 import { getMatches } from "@tauri-apps/plugin-cli";
 import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import { attachConsole } from "@tauri-apps/plugin-log";
+import { check } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 import { render, postRender } from "./renderer.js";
 import "katex/dist/katex.min.css";
 
@@ -303,6 +305,7 @@ listen("menu-action", (event) => {
     "zoom-in": () => { settings.fontSize = Math.min(28, settings.fontSize + 1); saveSettings(settings); applySettings(settings); },
     "zoom-out": () => { settings.fontSize = Math.max(12, settings.fontSize - 1); saveSettings(settings); applySettings(settings); },
     "zoom-reset": () => { settings.fontSize = defaults.fontSize; saveSettings(settings); applySettings(settings); },
+    "check-update": () => checkForUpdates(false),
     "show-help": () => { const h = document.getElementById("help-panel"); h.hidden = !h.hidden; },
   };
   if (actions[action]) actions[action]();
@@ -788,6 +791,69 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+// ── Updater ───────────────────────────────────────────────────────
+
+const updateBanner = document.getElementById("update-banner");
+const updateMessage = document.getElementById("update-message");
+const updateAction = document.getElementById("update-action");
+const updateDismiss = document.getElementById("update-dismiss");
+
+let pendingUpdate = null;
+
+function showUpdateBanner(version) {
+  updateMessage.textContent = `YAMV ${version} is available`;
+  updateAction.textContent = "Update";
+  updateAction.disabled = false;
+  updateBanner.hidden = false;
+}
+
+updateAction.addEventListener("click", async () => {
+  if (!pendingUpdate) return;
+  updateAction.textContent = "Downloading…";
+  updateAction.disabled = true;
+  try {
+    await pendingUpdate.downloadAndInstall();
+    updateMessage.textContent = "Update installed — restarting…";
+    updateAction.hidden = true;
+    updateDismiss.hidden = true;
+    setTimeout(() => relaunch(), 1000);
+  } catch (e) {
+    console.error("Update failed:", e);
+    updateMessage.textContent = "Update failed. Try again later.";
+    updateAction.textContent = "Retry";
+    updateAction.disabled = false;
+  }
+});
+
+updateDismiss.addEventListener("click", () => {
+  updateBanner.hidden = true;
+});
+
+async function checkForUpdates(silent = true) {
+  try {
+    const update = await check();
+    if (update) {
+      pendingUpdate = update;
+      showUpdateBanner(update.version);
+      return true;
+    } else if (!silent) {
+      updateMessage.textContent = "You're on the latest version";
+      updateAction.hidden = true;
+      updateBanner.hidden = false;
+      setTimeout(() => { updateBanner.hidden = true; updateAction.hidden = false; }, 3000);
+    }
+  } catch (e) {
+    console.error("Update check failed:", e);
+    if (!silent) {
+      updateMessage.textContent = "Could not check for updates";
+      updateAction.hidden = true;
+      updateBanner.hidden = false;
+      setTimeout(() => { updateBanner.hidden = true; updateAction.hidden = false; }, 3000);
+    }
+  }
+  return false;
+}
+
 // ── Print styles ──────────────────────────────────────────────────
 // (defined in base.css @media print)
 
@@ -937,6 +1003,9 @@ async function init() {
       await showEmptyState();
     }
   }
+
+  // Check for updates after a short delay to not block startup
+  setTimeout(() => checkForUpdates(true), 5000);
 }
 
 init();
