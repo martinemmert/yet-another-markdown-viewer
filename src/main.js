@@ -27,6 +27,7 @@ import "@fontsource/fira-code/400.css";
 import "@fontsource/fira-code/700.css";
 
 const contentEl = document.getElementById("content");
+const scrollEl = document.getElementById("content-scroll");
 const emptyStateEl = document.getElementById("empty-state");
 const titlebarText = document.getElementById("titlebar-text");
 const titlebarStats = document.getElementById("titlebar-stats");
@@ -99,7 +100,7 @@ function renderRecentFiles() {
 function saveScrollPosition() {
   if (!currentFilePath) return;
   const positions = JSON.parse(localStorage.getItem("yamv-scroll") || "{}");
-  positions[currentFilePath] = contentEl.scrollTop;
+  positions[currentFilePath] = scrollEl.scrollTop;
   localStorage.setItem("yamv-scroll", JSON.stringify(positions));
 }
 
@@ -107,13 +108,13 @@ function restoreScrollPosition(path) {
   const positions = JSON.parse(localStorage.getItem("yamv-scroll") || "{}");
   if (positions[path]) {
     requestAnimationFrame(() => {
-      contentEl.scrollTop = positions[path];
+      scrollEl.scrollTop = positions[path];
     });
   }
 }
 
 let scrollSaveTimer = null;
-contentEl.addEventListener("scroll", () => {
+scrollEl.addEventListener("scroll", () => {
   clearTimeout(scrollSaveTimer);
   scrollSaveTimer = setTimeout(saveScrollPosition, 500);
   updateActiveTocItem();
@@ -203,8 +204,17 @@ function applyTheme(pref) {
   else dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
 
   const theme = dark ? "dark" : "light";
+  const prev = document.documentElement.getAttribute("data-theme");
   document.documentElement.setAttribute("data-theme", theme);
   document.body.setAttribute("data-theme", theme);
+
+  // Re-render Mermaid diagrams when theme changes
+  if (prev && prev !== theme && currentMarkdown) {
+    contentEl.innerHTML = render(currentMarkdown);
+    resolveImages();
+    postRender(contentEl);
+    buildToc();
+  }
 }
 
 window
@@ -267,7 +277,7 @@ contentEl.addEventListener("click", (e) => {
     const id = decodeURIComponent(href.slice(1));
     const target = document.getElementById(id);
     if (target) {
-      contentEl.scrollTo({ top: target.offsetTop - 40, behavior: "smooth" });
+      scrollEl.scrollTo({ top: target.offsetTop - 40, behavior: "smooth" });
     }
     return;
   }
@@ -306,7 +316,7 @@ function buildToc() {
     a.href = `#${h.id}`;
     a.addEventListener("click", (e) => {
       e.preventDefault();
-      contentEl.scrollTo({ top: h.offsetTop - 40, behavior: "smooth" });
+      scrollEl.scrollTo({ top: h.offsetTop - 40, behavior: "smooth" });
     });
     li.appendChild(a);
     tocList.appendChild(li);
@@ -320,7 +330,7 @@ function updateActiveTocItem() {
   const links = tocList.querySelectorAll("a");
   if (headings.length === 0) return;
 
-  const scrollTop = contentEl.scrollTop + 60;
+  const scrollTop = scrollEl.scrollTop + 60;
   let activeIndex = 0;
   headings.forEach((h, i) => {
     if (h.offsetTop <= scrollTop) activeIndex = i;

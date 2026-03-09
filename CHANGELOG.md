@@ -15,8 +15,11 @@ All notable changes to YAMV are documented in this file.
 
 ### Changed
 - Theme switching now uses CSS `[data-theme]` attribute selectors instead of toggling stylesheet `disabled` state — fixes dark theme not applying in production builds
+- Mermaid diagrams re-render when switching between light and dark themes
 - Reduced backdrop blur on settings modal for better live-preview of theme changes
 - Removed bottom borders from h1 and h2 headings for cleaner appearance
+- Scrollbar moved to the window edge with separate scroll container and content wrapper
+- Content area has right padding for comfortable scrollbar spacing
 
 ## [0.1.0] — 2026-03-07
 
