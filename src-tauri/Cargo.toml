@@ -1,6 +1,6 @@
 [package]
 name = "yamv"
-version = "0.2.1"
+version = "0.3.0"
 description = "Yet Another Markdown Viewer"
 authors = []
 edition = "2021"
