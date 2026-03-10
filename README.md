@@ -29,36 +29,38 @@ Use your favorite text editor to write. Use YAMV to read.
 
 ## Installation
 
-Download the latest release for your platform from the [Releases](https://github.com/martinemmert/yet-another-markdown-viewer/releases) page.
+Download the latest release for your platform:
 
-### macOS
+| Platform | Download | Notes |
+|---|---|---|
+| **macOS** (Intel & Apple Silicon) | [`.dmg`](https://github.com/martinemmert/yet-another-markdown-viewer/releases/latest/download/YAMV_0.7.0_universal.dmg) | Works on all Macs |
+| **Windows** (64-bit) | [`.exe` Installer](https://github.com/martinemmert/yet-another-markdown-viewer/releases/latest/download/YAMV_0.7.0_x64-setup.exe) | Recommended |
+| **Windows** (64-bit) | [`.msi` Installer](https://github.com/martinemmert/yet-another-markdown-viewer/releases/latest/download/YAMV_0.7.0_x64_en-US.msi) | Alternative for IT admins / GPO |
+| **Linux** (Debian/Ubuntu) | [`.deb`](https://github.com/martinemmert/yet-another-markdown-viewer/releases/latest/download/YAMV_0.7.0_amd64.deb) | `sudo dpkg -i YAMV_*.deb` |
+| **Linux** (Fedora/RHEL) | [`.rpm`](https://github.com/martinemmert/yet-another-markdown-viewer/releases/latest/download/YAMV-0.7.0-1.x86_64.rpm) | `sudo rpm -i YAMV-*.rpm` |
+| **Linux** (Universal) | [`.AppImage`](https://github.com/martinemmert/yet-another-markdown-viewer/releases/latest/download/YAMV_0.7.0_amd64.AppImage) | No install needed — just run it |
 
-1. Download the `.dmg` file
-2. Drag **YAMV** into your Applications folder
-3. On first launch, macOS will show a warning that the app is from an unidentified developer. To open it anyway:
-   - **Right-click** (or Control-click) on **YAMV** in your Applications folder and select **Open**
-   - In the dialog that appears, click **Open** to confirm
-   - You only need to do this once — after that, the app opens normally
+Or browse all releases on the [Releases page](https://github.com/martinemmert/yet-another-markdown-viewer/releases).
 
-   If that doesn't work, go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to the message about YAMV.
+### macOS first launch
 
-   <details>
-   <summary>Alternative: using the Terminal</summary>
+macOS will show a warning that the app is from an unidentified developer. To open it:
 
-   Open **Terminal** (found in Applications → Utilities) and paste:
-   ```sh
-   xattr -cr /Applications/YAMV.app
-   ```
-   Press Enter, then open the app again.
-   </details>
+1. **Right-click** (or Control-click) on **YAMV** in your Applications folder and select **Open**
+2. In the dialog that appears, click **Open** to confirm
+3. You only need to do this once — after that, the app opens normally
 
-### Windows
+If that doesn't work, go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to the message about YAMV.
 
-Download and run the `.msi` installer.
+<details>
+<summary>Alternative: using the Terminal</summary>
 
-### Linux
-
-Download the `.deb` or `.AppImage` package.
+Open **Terminal** (found in Applications → Utilities) and paste:
+```sh
+xattr -cr /Applications/YAMV.app
+```
+Press Enter, then open the app again.
+</details>
 
 ## Usage
 
