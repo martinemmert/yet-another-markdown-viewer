@@ -6194,7 +6194,7 @@ dependencies = [
 
 [[package]]
 name = "yamv"
-version = "0.4.1"
+version = "0.6.0"
 dependencies = [
  "log",
  "notify-debouncer-mini",

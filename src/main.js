@@ -36,9 +36,14 @@ import "@fontsource/fira-code/700.css";
 
 // ── Store ────────────────────────────────────────────────────────
 
-const store = await Store.load("settings.json");
+const storePromise = Store.load("settings.json");
 
-// One-time migration from localStorage
+// Start log attachment in parallel — don't block on it
+attachConsole().catch(() => {});
+
+const store = await storePromise;
+
+// One-time migration from localStorage (non-blocking after first run)
 async function migrateFromLocalStorage() {
   if (await store.get("migrated")) return;
   try {
@@ -56,11 +61,7 @@ async function migrateFromLocalStorage() {
   await store.set("migrated", true);
   await store.save();
 }
-await migrateFromLocalStorage();
-
-// ── Log ──────────────────────────────────────────────────────────
-
-await attachConsole();
+migrateFromLocalStorage();
 
 // ── DOM Elements ─────────────────────────────────────────────────
 
@@ -123,9 +124,16 @@ async function renderRecentFiles() {
     pathSpan.className = "recent-path";
     pathSpan.textContent = r.path;
     a.appendChild(pathSpan);
-    a.addEventListener("click", (e) => {
+    a.addEventListener("click", async (e) => {
       e.preventDefault();
-      openFile(r.path);
+      try {
+        await openFile(r.path);
+      } catch {
+        const updated = (await getRecentFiles()).filter((f) => f.path !== r.path);
+        await store.set("recent", updated);
+        store.save();
+        renderRecentFiles();
+      }
     });
     const removeBtn = document.createElement("button");
     removeBtn.className = "recent-remove";
@@ -210,13 +218,15 @@ async function showContent(content, dir, filename, filePath) {
   // HTML passthrough is a deliberate feature of this local viewer.
   contentEl.innerHTML = render(content);
   resolveImages();
-  postRender(contentEl);
   buildToc();
   await restoreScrollPosition(currentFilePath);
 
-  // Track recent files and last opened
-  await addRecentFile(currentFilePath, filename);
-  await store.set("last-file", currentFilePath);
+  // Heavy post-processing (Mermaid) deferred to after paint
+  requestAnimationFrame(() => postRender(contentEl));
+
+  // Track recent files and last opened (non-blocking)
+  addRecentFile(currentFilePath, filename);
+  store.set("last-file", currentFilePath);
   store.save();
 }
 
@@ -229,12 +239,8 @@ async function showEmptyState() {
 }
 
 async function openFile(path) {
-  try {
-    const result = await invoke("open_file", { path });
-    await showContent(result.content, result.dir, result.filename, path);
-  } catch (e) {
-    console.error("Failed to open file:", e);
-  }
+  const result = await invoke("open_file", { path });
+  await showContent(result.content, result.dir, result.filename, path);
 }
 
 async function closeFile() {
@@ -322,7 +328,7 @@ listen("tauri://drag-drop", async (event) => {
       mdExtensions.some((ext) => p.toLowerCase().endsWith(ext)),
     );
     if (mdFile) {
-      await openFile(mdFile);
+      try { await openFile(mdFile); } catch (e) { console.error("Failed to open dropped file:", e); }
     }
   }
 });
@@ -330,12 +336,12 @@ listen("tauri://drag-drop", async (event) => {
 // ── Deep links ───────────────────────────────────────────────────
 
 try {
-  await onOpenUrl((urls) => {
+  onOpenUrl((urls) => {
     for (const url of urls) {
       try {
         const parsed = new URL(url);
         const filePath = parsed.searchParams.get("path") || decodeURIComponent(parsed.pathname);
-        if (filePath) openFile(filePath);
+        if (filePath) openFile(filePath).catch((e) => console.error("Failed to open deep link:", e));
       } catch { /* ignore malformed URLs */ }
     }
   });
@@ -660,11 +666,15 @@ function applySettings(s) {
   applyTheme(s.theme || "auto");
 }
 
-let settings = await loadSettings();
+// Load settings and version info in parallel
+const [settingsData, appVersion] = await Promise.all([
+  loadSettings(),
+  getVersion(),
+]);
+let settings = settingsData;
 applySettings(settings);
 
-// Show version in settings
-const appVersion = await getVersion();
+// Version display (arch/platform are sync)
 const appArch = arch();
 const appPlatform = platform();
 const isDev = window.location.hostname === "localhost";
