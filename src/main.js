@@ -244,7 +244,7 @@ async function openFile(path) {
 }
 
 async function closeFile() {
-  if (!currentFilePath) return;
+  if (!currentFilePath && !currentMarkdown) return;
   await saveScrollPosition();
   currentFilePath = "";
   currentMarkdown = "";
@@ -315,6 +315,7 @@ listen("menu-action", (event) => {
     "zoom-reset": () => { settings.fontSize = defaults.fontSize; saveSettings(settings); applySettings(settings); },
     "check-update": () => checkForUpdates(false),
     "show-welcome": () => showWelcome(),
+    "show-test-doc": () => showBundledDoc("/test-perf.md", "Rendering Test"),
     "show-help": () => { const h = document.getElementById("help-panel"); h.hidden = !h.hidden; },
   };
   if (actions[action]) actions[action]();
@@ -1020,6 +1021,9 @@ Open **Settings** with \`⌘,\` to customize:
 `;
 
 async function showWelcome() {
+  currentMarkdown = WELCOME_MD;
+  currentFilePath = "";
+  currentDir = "";
   titlebarText.textContent = "Welcome";
   emptyStateEl.style.display = "none";
   appLayout.style.display = "flex";
@@ -1030,6 +1034,27 @@ async function showWelcome() {
   buildToc();
   await store.set("welcomed", true);
   store.save();
+}
+
+async function showBundledDoc(path, title) {
+  try {
+    const res = await fetch(path);
+    const md = await res.text();
+    currentMarkdown = md;
+    currentFilePath = "";
+    currentDir = "";
+    titlebarText.textContent = title;
+    emptyStateEl.style.display = "none";
+    appLayout.style.display = "flex";
+    contentEl.style.display = "block";
+    titlebarStats.textContent = "";
+    contentEl.innerHTML = render(md);
+    resolveImages();
+    buildToc();
+    requestAnimationFrame(() => postRender(contentEl));
+  } catch (e) {
+    console.error("Failed to load bundled doc:", e);
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────────────

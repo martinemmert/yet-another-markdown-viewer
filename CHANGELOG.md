@@ -4,6 +4,23 @@ All notable changes to YAMV are documented in this file.
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-03-10
+
+### Added
+- CLI install/uninstall button in Settings — creates symlink at `/usr/local/bin/yamv` with admin prompt
+- "Rendering Test Document" in Help menu — bundled stress-test with code, math, tables, and diagrams
+- Stale recent files are automatically removed when clicked
+
+### Changed
+- Faster startup: parallelized store/settings/version loading, deferred non-critical init
+- Smoother scrolling: GPU layer promotion and CSS containment on scroll container
+- Mermaid diagrams render after initial paint via `requestAnimationFrame`
+- Store writes and log attachment no longer block the main thread
+
+### Fixed
+- Blank window when last-opened file no longer exists — now falls through to welcome/empty state
+- Bundled documents (Welcome, Test) can now be closed with `⌘W`
+
 ## [0.6.0] — 2026-03-09
 
 ### Changed

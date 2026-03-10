@@ -226,6 +226,7 @@ fn build_menu(app: &AppHandle) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::E
     let help_menu = SubmenuBuilder::new(app, "Help")
         .item(&MenuItemBuilder::with_id("show-help", "Keyboard Shortcuts").accelerator("CmdOrCtrl+Shift+/").build(app)?)
         .item(&MenuItemBuilder::with_id("show-welcome", "Welcome Guide").build(app)?)
+        .item(&MenuItemBuilder::with_id("show-test-doc", "Rendering Test Document").build(app)?)
         .build()?;
 
     MenuBuilder::new(app)
