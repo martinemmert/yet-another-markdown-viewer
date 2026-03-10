@@ -33,14 +33,14 @@ Download the latest release for your platform:
 
 | Platform | Download | Notes |
 |---|---|---|
-| **macOS** (Intel & Apple Silicon) | [`.dmg`](https://github.com/martinemmert/yet-another-markdown-viewer/releases/latest/download/YAMV_0.7.0_universal.dmg) | Works on all Macs |
-| **Windows** (64-bit) | [`.exe` Installer](https://github.com/martinemmert/yet-another-markdown-viewer/releases/latest/download/YAMV_0.7.0_x64-setup.exe) | Recommended |
-| **Windows** (64-bit) | [`.msi` Installer](https://github.com/martinemmert/yet-another-markdown-viewer/releases/latest/download/YAMV_0.7.0_x64_en-US.msi) | Alternative for IT admins / GPO |
-| **Linux** (Debian/Ubuntu) | [`.deb`](https://github.com/martinemmert/yet-another-markdown-viewer/releases/latest/download/YAMV_0.7.0_amd64.deb) | `sudo dpkg -i YAMV_*.deb` |
-| **Linux** (Fedora/RHEL) | [`.rpm`](https://github.com/martinemmert/yet-another-markdown-viewer/releases/latest/download/YAMV-0.7.0-1.x86_64.rpm) | `sudo rpm -i YAMV-*.rpm` |
-| **Linux** (Universal) | [`.AppImage`](https://github.com/martinemmert/yet-another-markdown-viewer/releases/latest/download/YAMV_0.7.0_amd64.AppImage) | No install needed — just run it |
+| **macOS** (Intel & Apple Silicon) | `.dmg` | Works on all Macs |
+| **Windows** (64-bit) | `.exe` Installer | Recommended |
+| **Windows** (64-bit) | `.msi` Installer | Alternative for IT admins / GPO |
+| **Linux** (Debian/Ubuntu) | `.deb` | `sudo dpkg -i YAMV_*.deb` |
+| **Linux** (Fedora/RHEL) | `.rpm` | `sudo rpm -i YAMV-*.rpm` |
+| **Linux** (Universal) | `.AppImage` | No install needed — just run it |
 
-Or browse all releases on the [Releases page](https://github.com/martinemmert/yet-another-markdown-viewer/releases).
+**[Download latest release](https://github.com/martinemmert/yet-another-markdown-viewer/releases/latest)** — pick the file matching your platform.
 
 ### macOS first launch
 
