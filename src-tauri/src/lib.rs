@@ -80,14 +80,28 @@ fn check_cli_installed() -> bool {
 
 #[tauri::command]
 fn install_cli() -> Result<String, String> {
-    let binary = std::env::current_exe().map_err(|e| format!("Failed to find binary: {}", e))?;
-    let link = "/usr/local/bin/yamv";
+    let cli_path = "/usr/local/bin/yamv";
 
-    // Use osascript to run ln -sf with admin privileges
+    // Resolve the .app bundle path from the current binary
+    // Binary is at YAMV.app/Contents/MacOS/YAMV, we need YAMV.app
+    let binary = std::env::current_exe().map_err(|e| format!("Failed to find binary: {}", e))?;
+    let app_path = binary
+        .parent() // MacOS/
+        .and_then(|p| p.parent()) // Contents/
+        .and_then(|p| p.parent()) // YAMV.app/
+        .ok_or_else(|| "Failed to resolve .app bundle path".to_string())?;
+
+    let wrapper = format!(
+        "#!/bin/sh\nopen -a '{}' --args \"$@\"\n",
+        app_path.display()
+    );
+
+    // Use osascript to write the script with admin privileges
     let script = format!(
-        "do shell script \"ln -sf '{}' '{}'\" with administrator privileges",
-        binary.display(),
-        link
+        "do shell script \"echo '{}' > '{}' && chmod +x '{}'\" with administrator privileges",
+        wrapper.replace('\'', "'\\''").replace('\n', "\\n"),
+        cli_path,
+        cli_path
     );
     let output = std::process::Command::new("osascript")
         .arg("-e")
@@ -102,7 +116,7 @@ fn install_cli() -> Result<String, String> {
         if stderr.contains("User canceled") || stderr.contains("-128") {
             Err("Installation cancelled".to_string())
         } else {
-            Err(format!("Failed to create symlink: {}", stderr))
+            Err(format!("Failed to install CLI: {}", stderr))
         }
     }
 }

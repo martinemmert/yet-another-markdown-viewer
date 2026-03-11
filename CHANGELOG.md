@@ -4,6 +4,9 @@ All notable changes to YAMV are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- CLI command (`yamv file.md`) no longer blocks the terminal — now uses a wrapper script with `open -a` instead of a direct symlink
+
 ## [0.7.0] — 2026-03-10
 
 ### Added
