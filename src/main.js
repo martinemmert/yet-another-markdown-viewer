@@ -681,6 +681,41 @@ const appPlatform = platform();
 const isDev = window.location.hostname === "localhost";
 document.getElementById("settings-version").textContent = `YAMV v${appVersion} (${appPlatform}-${appArch}${isDev ? ", dev" : ""})`;
 
+// Default app
+const defaultAppStatus = document.getElementById("default-app-status");
+const defaultAppBtn = document.getElementById("default-app-btn");
+
+async function updateDefaultAppStatus() {
+  try {
+    const isDefault = await invoke("is_default_markdown_app");
+    if (isDefault) {
+      defaultAppStatus.textContent = "YAMV is the default";
+      defaultAppStatus.className = "cli-status installed";
+      defaultAppBtn.textContent = "Set Default";
+      defaultAppBtn.disabled = true;
+    } else {
+      defaultAppStatus.textContent = "Not set as default";
+      defaultAppStatus.className = "cli-status";
+      defaultAppBtn.textContent = "Set Default";
+      defaultAppBtn.disabled = false;
+    }
+  } catch {
+    defaultAppStatus.textContent = "Unable to check";
+    defaultAppBtn.disabled = true;
+  }
+}
+
+defaultAppBtn.addEventListener("click", async () => {
+  defaultAppBtn.disabled = true;
+  defaultAppBtn.textContent = "Setting…";
+  try {
+    await invoke("set_default_markdown_app");
+  } catch (e) {
+    console.error("Failed to set default app:", e);
+  }
+  await updateDefaultAppStatus();
+});
+
 // CLI install
 const cliStatus = document.getElementById("cli-status");
 const cliBtn = document.getElementById("cli-install-btn");
@@ -727,7 +762,7 @@ function toggleSettings() {
   const show = settingsPanel.hidden;
   settingsPanel.hidden = !show;
   settingsBackdrop.hidden = !show;
-  if (show) updateCliStatus();
+  if (show) { updateDefaultAppStatus(); updateCliStatus(); }
 }
 
 document.getElementById("settings-close").addEventListener("click", () => {

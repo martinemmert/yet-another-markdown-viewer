@@ -2,3 +2,5 @@ node_modules/
 src-tauri/target/
 dist/
 .DS_Store
+src-tauri/extensions/quicklook/build/
+src-tauri/extensions/quicklook/resources/renderer.js

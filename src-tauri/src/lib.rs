@@ -1,3 +1,5 @@
+use core_foundation::base::TCFType;
+use core_foundation::string::CFString;
 use notify_debouncer_mini::notify::RecursiveMode;
 use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
 use std::path::PathBuf;
@@ -146,6 +148,56 @@ fn uninstall_cli() -> Result<String, String> {
     }
 }
 
+const MARKDOWN_UTI: &str = "net.daringfireball.markdown";
+const BUNDLE_ID: &str = "de.martinemmert.projects.yamv";
+
+extern "C" {
+    fn LSSetDefaultRoleHandlerForContentType(
+        inContentType: core_foundation::string::CFStringRef,
+        inRole: u32,
+        inHandlerBundleID: core_foundation::string::CFStringRef,
+    ) -> i32;
+
+    fn LSCopyDefaultRoleHandlerForContentType(
+        inContentType: core_foundation::string::CFStringRef,
+        inRole: u32,
+    ) -> core_foundation::string::CFStringRef;
+}
+
+const K_LS_ROLES_ALL: u32 = 0xFFFFFFFF;
+
+#[tauri::command]
+fn is_default_markdown_app() -> bool {
+    let uti = CFString::new(MARKDOWN_UTI);
+    unsafe {
+        let handler = LSCopyDefaultRoleHandlerForContentType(uti.as_concrete_TypeRef(), K_LS_ROLES_ALL);
+        if handler.is_null() {
+            return false;
+        }
+        let handler_cf = CFString::wrap_under_create_rule(handler);
+        let handler_str = handler_cf.to_string();
+        handler_str.eq_ignore_ascii_case(BUNDLE_ID)
+    }
+}
+
+#[tauri::command]
+fn set_default_markdown_app() -> Result<(), String> {
+    let uti = CFString::new(MARKDOWN_UTI);
+    let bundle_id = CFString::new(BUNDLE_ID);
+    let result = unsafe {
+        LSSetDefaultRoleHandlerForContentType(
+            uti.as_concrete_TypeRef(),
+            K_LS_ROLES_ALL,
+            bundle_id.as_concrete_TypeRef(),
+        )
+    };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(format!("LSSetDefaultRoleHandlerForContentType returned {}", result))
+    }
+}
+
 fn start_watching(app: &AppHandle, path: &PathBuf) {
     let state = app.state::<AppState>();
     let app_handle = app.clone();
@@ -277,10 +329,24 @@ pub fn run() {
             watcher: Mutex::new(None),
             current_file: Mutex::new(None),
         })
-        .invoke_handler(tauri::generate_handler![open_file, print_page, check_cli_installed, install_cli, uninstall_cli])
+        .invoke_handler(tauri::generate_handler![open_file, print_page, check_cli_installed, install_cli, uninstall_cli, is_default_markdown_app, set_default_markdown_app])
         .setup(|app| {
             let handle = app.handle().clone();
             if let Some(window) = app.get_webview_window("main") {
+                // Set window background to match theme — prevents white flash on startup
+                let is_dark = {
+                    let output = std::process::Command::new("defaults")
+                        .args(["read", "-g", "AppleInterfaceStyle"])
+                        .output();
+                    output.map_or(false, |o| String::from_utf8_lossy(&o.stdout).trim() == "Dark")
+                };
+                let bg = if is_dark {
+                    tauri::window::Color(28, 30, 32, 255)   // #1c1e20
+                } else {
+                    tauri::window::Color(250, 250, 250, 255) // #fafafa
+                };
+                let _ = window.set_background_color(Some(bg));
+
                 if let Ok(Some(monitor)) = window.current_monitor() {
                     let size = monitor.size();
                     let scale = monitor.scale_factor();

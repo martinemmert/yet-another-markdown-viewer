@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <title>YAMV</title>
+    <style>html{background:#fafafa}@media(prefers-color-scheme:dark){html{background:#1c1e20}}</style>
     <link rel="stylesheet" href="/src/styles/base.css" />
     <link rel="stylesheet" href="/src/styles/github-light.css" />
     <link rel="stylesheet" href="/src/styles/github-dark.css" />
@@ -79,6 +81,14 @@
             <button data-width="820" class="seg-btn width-btn active">Medium</button>
             <button data-width="1080" class="seg-btn width-btn">Wide</button>
           </div>
+        </div>
+        <div class="settings-group">
+          <label>Default App</label>
+          <div class="settings-cli-row">
+            <span class="cli-status" id="default-app-status">Checking…</span>
+            <button id="default-app-btn" class="cli-btn" disabled>Set Default</button>
+          </div>
+          <p class="cli-hint">Use YAMV for Quick Look previews and double-click</p>
         </div>
         <div class="settings-group">
           <label>Command Line</label>
