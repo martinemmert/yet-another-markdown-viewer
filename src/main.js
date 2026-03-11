@@ -1028,6 +1028,14 @@ graph LR
 
 [^1]: Like this one — hover or scroll down to see it.
 
+## QuickLook preview
+
+Press **Space** on any \`.md\` file in Finder to see a fully rendered preview — syntax highlighting, math, and diagrams included. Works in light and dark mode.
+
+## Set as default viewer
+
+Open **Settings** (\`⌘,\`) and click **Set Default** under *Default App* to register YAMV for Quick Look previews, double-click opening, and the "Open with" menu in Finder.
+
 ## Make it yours
 
 Open **Settings** with \`⌘,\` to customize:
@@ -1036,6 +1044,8 @@ Open **Settings** with \`⌘,\` to customize:
 - **Typography** — choose from several carefully paired font combinations
 - **Text size & line height** — adjust to your reading preference
 - **Content width** — narrow, medium, or wide
+- **Default App** — register YAMV as your default markdown viewer
+- **Command Line** — install the \`yamv\` CLI command
 
 ## Handy shortcuts
 

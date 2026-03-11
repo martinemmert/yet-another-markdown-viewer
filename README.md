@@ -69,6 +69,22 @@ Press Enter, then open the app again.
 - **CLI:** `yamv path/to/file.md`
 - **Settings:** `Cmd+,` (macOS) / `Ctrl+,` to adjust theme, font, text size, line height, and content width
 
+<p align="center">
+  <img src="screenshots/settings.png" alt="YAMV Settings" width="480">
+</p>
+
+### QuickLook (macOS)
+
+Press **Space** on any `.md` file in Finder to see a fully rendered preview — complete with syntax highlighting, KaTeX math, and Mermaid diagrams. Works in both light and dark mode.
+
+### Set as default markdown viewer (macOS)
+
+Open **Settings** (`Cmd+,`) and click **Set Default** under *Default App*. This registers YAMV for:
+
+- **Quick Look** previews (Space bar in Finder)
+- **Double-click** to open `.md` files directly in YAMV
+- **"Open with"** context menu in Finder
+
 ## Built With
 
 [Tauri v2](https://tauri.app) · [markdown-it](https://github.com/markdown-it/markdown-it) · [highlight.js](https://highlightjs.org) · [Mermaid](https://mermaid.js.org) · [KaTeX](https://katex.org)
