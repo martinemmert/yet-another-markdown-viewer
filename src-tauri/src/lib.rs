@@ -1,5 +1,3 @@
-use core_foundation::base::TCFType;
-use core_foundation::string::CFString;
 use notify_debouncer_mini::notify::RecursiveMode;
 use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
 use std::path::PathBuf;
@@ -148,53 +146,71 @@ fn uninstall_cli() -> Result<String, String> {
     }
 }
 
-const MARKDOWN_UTI: &str = "net.daringfireball.markdown";
-const BUNDLE_ID: &str = "de.martinemmert.projects.yamv";
+#[cfg(target_os = "macos")]
+mod default_app {
+    use core_foundation::base::TCFType;
+    use core_foundation::string::CFString;
 
-extern "C" {
-    fn LSSetDefaultRoleHandlerForContentType(
-        inContentType: core_foundation::string::CFStringRef,
-        inRole: u32,
-        inHandlerBundleID: core_foundation::string::CFStringRef,
-    ) -> i32;
+    const MARKDOWN_UTI: &str = "net.daringfireball.markdown";
+    const BUNDLE_ID: &str = "de.martinemmert.projects.yamv";
+    const K_LS_ROLES_ALL: u32 = 0xFFFFFFFF;
 
-    fn LSCopyDefaultRoleHandlerForContentType(
-        inContentType: core_foundation::string::CFStringRef,
-        inRole: u32,
-    ) -> core_foundation::string::CFStringRef;
-}
+    extern "C" {
+        fn LSSetDefaultRoleHandlerForContentType(
+            inContentType: core_foundation::string::CFStringRef,
+            inRole: u32,
+            inHandlerBundleID: core_foundation::string::CFStringRef,
+        ) -> i32;
 
-const K_LS_ROLES_ALL: u32 = 0xFFFFFFFF;
+        fn LSCopyDefaultRoleHandlerForContentType(
+            inContentType: core_foundation::string::CFStringRef,
+            inRole: u32,
+        ) -> core_foundation::string::CFStringRef;
+    }
 
-#[tauri::command]
-fn is_default_markdown_app() -> bool {
-    let uti = CFString::new(MARKDOWN_UTI);
-    unsafe {
-        let handler = LSCopyDefaultRoleHandlerForContentType(uti.as_concrete_TypeRef(), K_LS_ROLES_ALL);
-        if handler.is_null() {
-            return false;
+    #[tauri::command]
+    pub fn is_default_markdown_app() -> bool {
+        let uti = CFString::new(MARKDOWN_UTI);
+        unsafe {
+            let handler = LSCopyDefaultRoleHandlerForContentType(uti.as_concrete_TypeRef(), K_LS_ROLES_ALL);
+            if handler.is_null() {
+                return false;
+            }
+            let handler_cf = CFString::wrap_under_create_rule(handler);
+            let handler_str = handler_cf.to_string();
+            handler_str.eq_ignore_ascii_case(BUNDLE_ID)
         }
-        let handler_cf = CFString::wrap_under_create_rule(handler);
-        let handler_str = handler_cf.to_string();
-        handler_str.eq_ignore_ascii_case(BUNDLE_ID)
+    }
+
+    #[tauri::command]
+    pub fn set_default_markdown_app() -> Result<(), String> {
+        let uti = CFString::new(MARKDOWN_UTI);
+        let bundle_id = CFString::new(BUNDLE_ID);
+        let result = unsafe {
+            LSSetDefaultRoleHandlerForContentType(
+                uti.as_concrete_TypeRef(),
+                K_LS_ROLES_ALL,
+                bundle_id.as_concrete_TypeRef(),
+            )
+        };
+        if result == 0 {
+            Ok(())
+        } else {
+            Err(format!("LSSetDefaultRoleHandlerForContentType returned {}", result))
+        }
     }
 }
 
-#[tauri::command]
-fn set_default_markdown_app() -> Result<(), String> {
-    let uti = CFString::new(MARKDOWN_UTI);
-    let bundle_id = CFString::new(BUNDLE_ID);
-    let result = unsafe {
-        LSSetDefaultRoleHandlerForContentType(
-            uti.as_concrete_TypeRef(),
-            K_LS_ROLES_ALL,
-            bundle_id.as_concrete_TypeRef(),
-        )
-    };
-    if result == 0 {
-        Ok(())
-    } else {
-        Err(format!("LSSetDefaultRoleHandlerForContentType returned {}", result))
+#[cfg(not(target_os = "macos"))]
+mod default_app {
+    #[tauri::command]
+    pub fn is_default_markdown_app() -> bool {
+        false
+    }
+
+    #[tauri::command]
+    pub fn set_default_markdown_app() -> Result<(), String> {
+        Err("Default app registration is only supported on macOS".to_string())
     }
 }
 
@@ -329,23 +345,26 @@ pub fn run() {
             watcher: Mutex::new(None),
             current_file: Mutex::new(None),
         })
-        .invoke_handler(tauri::generate_handler![open_file, print_page, check_cli_installed, install_cli, uninstall_cli, is_default_markdown_app, set_default_markdown_app])
+        .invoke_handler(tauri::generate_handler![open_file, print_page, check_cli_installed, install_cli, uninstall_cli, default_app::is_default_markdown_app, default_app::set_default_markdown_app])
         .setup(|app| {
             let handle = app.handle().clone();
             if let Some(window) = app.get_webview_window("main") {
                 // Set window background to match theme — prevents white flash on startup
-                let is_dark = {
-                    let output = std::process::Command::new("defaults")
-                        .args(["read", "-g", "AppleInterfaceStyle"])
-                        .output();
-                    output.map_or(false, |o| String::from_utf8_lossy(&o.stdout).trim() == "Dark")
-                };
-                let bg = if is_dark {
-                    tauri::window::Color(28, 30, 32, 255)   // #1c1e20
-                } else {
-                    tauri::window::Color(250, 250, 250, 255) // #fafafa
-                };
-                let _ = window.set_background_color(Some(bg));
+                #[cfg(target_os = "macos")]
+                {
+                    let is_dark = {
+                        let output = std::process::Command::new("defaults")
+                            .args(["read", "-g", "AppleInterfaceStyle"])
+                            .output();
+                        output.map_or(false, |o| String::from_utf8_lossy(&o.stdout).trim() == "Dark")
+                    };
+                    let bg = if is_dark {
+                        tauri::window::Color(28, 30, 32, 255)   // #1c1e20
+                    } else {
+                        tauri::window::Color(250, 250, 250, 255) // #fafafa
+                    };
+                    let _ = window.set_background_color(Some(bg));
+                }
 
                 if let Ok(Some(monitor)) = window.current_monitor() {
                     let size = monitor.size();
