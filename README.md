@@ -16,6 +16,7 @@ Use your favorite text editor to write. Use YAMV to read.
 
 ## Features
 
+- **QuickLook preview** — press Space on any `.md` file in Finder to see a fully rendered preview with syntax highlighting, math, and diagrams
 - **Live reload** — automatically re-renders when the file changes on disk
 - **Rich markdown** — GFM tables, task lists, footnotes, emoji, abbreviations, definition lists, `==highlights==`, and math (KaTeX)
 - **Mermaid diagrams** — flowcharts, sequence diagrams, and more, rendered inline
@@ -24,7 +25,7 @@ Use your favorite text editor to write. Use YAMV to read.
 - **Table of contents** — auto-generated sidebar for quick navigation
 - **Search** — find text within the rendered document
 - **Drag & drop** — drop a markdown file onto the window to open it
-- **File associations** — set YAMV as your default `.md` viewer
+- **Default app registration** — set YAMV as your default `.md` viewer from Settings for QuickLook and double-click support
 - **Remembers state** — window size, position, scroll location, and settings persist across sessions
 
 ## Installation

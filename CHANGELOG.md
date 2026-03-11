@@ -2,7 +2,15 @@
 
 All notable changes to YAMV are documented in this file.
 
-## [Unreleased]
+## [0.8.0] — 2026-03-11
+
+### Added
+- **QuickLook extension** — press Space on any `.md` file in Finder to see a fully rendered preview with syntax highlighting, KaTeX math, Mermaid diagrams, and light/dark theme support
+- **Default app registration** — "Set Default" button in Settings registers YAMV as the default markdown viewer (enables "Open with YAMV" in QuickLook and double-click)
+- Anti-flash startup: native window background color matches the system theme, `color-scheme` meta tag and inline critical CSS eliminate white flash on launch and theme transitions
+
+### Changed
+- Release workflow now builds and injects the QuickLook extension into the macOS `.app` bundle automatically
 
 ### Fixed
 - CLI command (`yamv file.md`) no longer blocks the terminal — now uses a wrapper script with `open -a` instead of a direct symlink
