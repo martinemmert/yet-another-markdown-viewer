@@ -66,17 +66,12 @@ html, body {
   line-height: 1.7;
   word-wrap: break-word;
   -webkit-font-smoothing: antialiased;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  will-change: scroll-position;
-  contain: layout style;
 }
 
 #content {
   max-width: 780px;
   margin: 0 auto;
   padding: 20px 32px 40px;
-  contain: layout style;
 }
 
 .markdown-body a {

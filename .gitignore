@@ -4,3 +4,4 @@ dist/
 .DS_Store
 src-tauri/extensions/quicklook/build/
 src-tauri/extensions/quicklook/resources/renderer.js
+src-tauri/extensions/quicklook/resources/mermaid-bundle.js

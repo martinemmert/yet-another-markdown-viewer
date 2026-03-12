@@ -10,6 +10,7 @@
 		A1000001 /* PreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001; };
 		A1000002 /* renderer.js in Resources */ = {isa = PBXBuildFile; fileRef = A2000002; };
 		A1000003 /* styles.css in Resources */ = {isa = PBXBuildFile; fileRef = A2000003; };
+		A1000004 /* mermaid-bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = A2000006; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -18,6 +19,7 @@
 		A2000003 /* styles.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = styles.css; sourceTree = "<group>"; };
 		A2000004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A2000005 /* YAMVQuickLook.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = YAMVQuickLook.entitlements; sourceTree = "<group>"; };
+		A2000006 /* mermaid-bundle.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "mermaid-bundle.js"; sourceTree = "<group>"; };
 		A2000010 /* YAMVQuickLook.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YAMVQuickLook.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -37,6 +39,7 @@
 			children = (
 				A2000002,
 				A2000003,
+				A2000006,
 			);
 			path = resources;
 			sourceTree = "<group>";
@@ -122,6 +125,7 @@
 			files = (
 				A1000002,
 				A1000003,
+				A1000004,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

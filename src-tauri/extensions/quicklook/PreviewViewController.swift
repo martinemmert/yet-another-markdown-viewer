@@ -51,6 +51,10 @@ class PreviewViewController: NSViewController, QLPreviewingController {
         let markdownData = markdown.data(using: .utf8) ?? Data()
         let base64Markdown = markdownData.base64EncodedString()
 
+        // Only include the heavy Mermaid bundle (~3.5MB) if the markdown contains mermaid blocks
+        let hasMermaid = markdown.contains("```mermaid")
+        let mermaidScript = hasMermaid ? "<script>\(loadResource("mermaid-bundle", ext: "js"))</script>" : ""
+
         return """
         <!DOCTYPE html>
         <html>
@@ -64,16 +68,18 @@ class PreviewViewController: NSViewController, QLPreviewingController {
         <body>
         <div id="content" class="markdown-body"></div>
         <script>\(rendererJS)</script>
+        \(mermaidScript)
         <script>
         (function() {
             var md = atob('\(base64Markdown)');
-            // Decode UTF-8 from binary string
             md = decodeURIComponent(Array.prototype.map.call(md, function(c) {
                 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
             }).join(''));
             var el = document.getElementById('content');
             el.innerHTML = window.renderMarkdown(md);
-            requestAnimationFrame(function() { window.renderMermaid(el); });
+            if (el.querySelector('code.language-mermaid')) {
+                requestAnimationFrame(function() { window.renderMermaid(el); });
+            }
         })();
         </script>
         </body>
