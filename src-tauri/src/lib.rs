@@ -73,6 +73,23 @@ fn print_page(app: AppHandle) {
 }
 
 #[tauri::command]
+fn open_in_editor(path: String, editor: String) -> Result<(), String> {
+    let file = PathBuf::from(&path);
+    if !file.exists() {
+        return Err(format!("File not found: {}", path));
+    }
+
+    std::process::Command::new("open")
+        .arg("-a")
+        .arg(&editor)
+        .arg(&path)
+        .spawn()
+        .map_err(|e| format!("Failed to open editor: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
 fn check_cli_installed() -> bool {
     let link = PathBuf::from("/usr/local/bin/yamv");
     link.exists()
@@ -285,6 +302,7 @@ fn build_menu(app: &AppHandle) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::E
 
     let file_menu = SubmenuBuilder::new(app, "File")
         .item(&MenuItemBuilder::with_id("open", "Open…").accelerator("CmdOrCtrl+O").build(app)?)
+        .item(&MenuItemBuilder::with_id("edit-in-editor", "Edit in Editor").accelerator("CmdOrCtrl+E").build(app)?)
         .item(&MenuItemBuilder::with_id("close-file", "Close File").accelerator("CmdOrCtrl+W").build(app)?)
         .separator()
         .item(&MenuItemBuilder::with_id("print", "Print…").accelerator("CmdOrCtrl+P").build(app)?)
@@ -345,7 +363,7 @@ pub fn run() {
             watcher: Mutex::new(None),
             current_file: Mutex::new(None),
         })
-        .invoke_handler(tauri::generate_handler![open_file, print_page, check_cli_installed, install_cli, uninstall_cli, default_app::is_default_markdown_app, default_app::set_default_markdown_app])
+        .invoke_handler(tauri::generate_handler![open_file, print_page, open_in_editor, check_cli_installed, install_cli, uninstall_cli, default_app::is_default_markdown_app, default_app::set_default_markdown_app])
         .setup(|app| {
             let handle = app.handle().clone();
             if let Some(window) = app.get_webview_window("main") {

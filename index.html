@@ -83,6 +83,11 @@
           </div>
         </div>
         <div class="settings-group">
+          <label>Editor</label>
+          <input type="text" id="setting-editor" class="settings-input" placeholder="e.g. Visual Studio Code" />
+          <p class="cli-hint">App name to open files for editing (<kbd>&#8984;E</kbd>)</p>
+        </div>
+        <div class="settings-group">
           <label>Default App</label>
           <div class="settings-cli-row">
             <span class="cli-status" id="default-app-status">Checking…</span>
@@ -105,6 +110,7 @@
       <h4>Keyboard Shortcuts</h4>
       <dl>
         <dt><kbd>&#8984;O</kbd></dt><dd>Open file</dd>
+        <dt><kbd>&#8984;E</kbd></dt><dd>Edit in editor</dd>
         <dt><kbd>&#8984;W</kbd></dt><dd>Close file</dd>
         <dt><kbd>&#8984;F</kbd></dt><dd>Search in document</dd>
         <dt><kbd>&#8984;\</kbd></dt><dd>Toggle table of contents</dd>

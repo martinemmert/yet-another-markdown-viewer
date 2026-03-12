@@ -25,6 +25,7 @@ Use your favorite text editor to write. Use YAMV to read.
 - **Table of contents** — auto-generated sidebar for quick navigation
 - **Search** — find text within the rendered document
 - **Drag & drop** — drop a markdown file onto the window to open it
+- **Edit in Editor** — press `Cmd+E` to open the current file in your preferred editor
 - **Default app registration** — set YAMV as your default `.md` viewer from Settings for QuickLook and double-click support
 - **Remembers state** — window size, position, scroll location, and settings persist across sessions
 
@@ -84,6 +85,10 @@ Open **Settings** (`Cmd+,`) and click **Set Default** under *Default App*. This 
 - **Quick Look** previews (Space bar in Finder)
 - **Double-click** to open `.md` files directly in YAMV
 - **"Open with"** context menu in Finder
+
+### Edit in your favorite editor
+
+Press `Cmd+E` to open the current file in your preferred editor. Configure which app to use in **Settings** under *Editor* (e.g. "Visual Studio Code", "Cursor", "Sublime Text").
 
 ## Built With
 

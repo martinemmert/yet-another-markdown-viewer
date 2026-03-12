@@ -6194,7 +6194,7 @@ dependencies = [
 
 [[package]]
 name = "yamv"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "core-foundation",
  "log",

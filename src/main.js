@@ -264,6 +264,21 @@ async function openFileDialog() {
   }
 }
 
+async function editInEditor() {
+  if (!currentFilePath) return;
+  const s = await loadSettings();
+  if (!s.editor) {
+    toggleSettings();
+    settingEditor.focus();
+    return;
+  }
+  try {
+    await invoke("open_in_editor", { path: currentFilePath, editor: s.editor });
+  } catch (e) {
+    console.error("Failed to open editor:", e);
+  }
+}
+
 // ── Theme handling ────────────────────────────────────────────────
 
 function applyTheme(pref) {
@@ -305,6 +320,7 @@ listen("menu-action", (event) => {
   const action = event.payload;
   const actions = {
     "open": () => openFileDialog(),
+    "edit-in-editor": () => editInEditor(),
     "close-file": () => closeFile(),
     "print": () => invoke("print_page"),
     "find": () => openSearch(),
@@ -589,6 +605,7 @@ document.addEventListener("copy", (e) => {
 const settingsPanel = document.getElementById("settings-panel");
 const settingsBackdrop = document.getElementById("settings-backdrop");
 const settingFont = document.getElementById("setting-font");
+const settingEditor = document.getElementById("setting-editor");
 const sizeValue = document.getElementById("size-value");
 const lhValue = document.getElementById("lh-value");
 
@@ -630,7 +647,7 @@ const FONT_THEMES = {
   },
 };
 
-const defaults = { font: "literata-inter", fontSize: 17, lineHeight: 1.7, maxWidth: 820, theme: "auto" };
+const defaults = { font: "literata-inter", fontSize: 17, lineHeight: 1.7, maxWidth: 820, theme: "auto", editor: "" };
 
 async function loadSettings() {
   const saved = await store.get("settings");
@@ -653,6 +670,7 @@ function applySettings(s) {
   document.documentElement.style.setProperty("--code-font", fontTheme.code);
 
   settingFont.value = s.font;
+  settingEditor.value = s.editor || "";
   sizeValue.innerHTML = s.fontSize + "<small>px</small>";
   lhValue.textContent = s.lineHeight.toFixed(1);
 
@@ -787,6 +805,11 @@ settingFont.addEventListener("change", () => {
   settings.font = settingFont.value;
   saveSettings(settings);
   applySettings(settings);
+});
+
+settingEditor.addEventListener("change", () => {
+  settings.editor = settingEditor.value.trim();
+  saveSettings(settings);
 });
 
 document.getElementById("size-up").addEventListener("click", () => {
@@ -1028,13 +1051,21 @@ graph LR
 
 [^1]: Like this one — hover or scroll down to see it.
 
-## QuickLook preview
+## QuickLook preview (macOS)
 
-Press **Space** on any \`.md\` file in Finder to see a fully rendered preview — syntax highlighting, math, and diagrams included. Works in light and dark mode.
+Press **Space** on any \`.md\` file in Finder to see a fully rendered preview — complete with syntax highlighting, KaTeX math, and Mermaid diagrams. Works in both light and dark mode, no extra setup needed.
 
-## Set as default viewer
+## Set as default viewer (macOS)
 
-Open **Settings** (\`⌘,\`) and click **Set Default** under *Default App* to register YAMV for Quick Look previews, double-click opening, and the "Open with" menu in Finder.
+Open **Settings** (\`⌘,\`) and click **Set Default** under *Default App* to register YAMV for:
+
+- **Quick Look** previews (Space bar in Finder)
+- **Double-click** to open \`.md\` files directly in YAMV
+- **"Open with"** context menu in Finder
+
+## Edit in your favorite editor
+
+YAMV is a viewer — but when you need to edit, press \`⌘E\` to open the current file in your preferred editor. Set your editor in **Settings** (\`⌘,\`) under *Editor* (e.g. "Visual Studio Code", "Cursor", "Sublime Text").
 
 ## Make it yours
 
@@ -1044,6 +1075,7 @@ Open **Settings** with \`⌘,\` to customize:
 - **Typography** — choose from several carefully paired font combinations
 - **Text size & line height** — adjust to your reading preference
 - **Content width** — narrow, medium, or wide
+- **Editor** — choose your preferred app for editing markdown files
 - **Default App** — register YAMV as your default markdown viewer
 - **Command Line** — install the \`yamv\` CLI command
 
@@ -1052,6 +1084,7 @@ Open **Settings** with \`⌘,\` to customize:
 | Shortcut | Action |
 |---|---|
 | \`⌘O\` | Open file |
+| \`⌘E\` | Edit in editor |
 | \`⌘W\` | Close file |
 | \`⌘F\` | Search in document |
 | \`⌘,\` | Open settings |

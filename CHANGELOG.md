@@ -2,6 +2,19 @@
 
 All notable changes to YAMV are documented in this file.
 
+## [0.9.0] — 2026-03-12
+
+### Added
+- **Edit in Editor** — open the current file in your preferred editor with `Cmd+E` (File → Edit in Editor)
+- Editor preference in Settings — configure which app to use for editing (e.g. "Visual Studio Code", "Cursor", "Sublime Text")
+- Settings screenshot in README
+
+### Changed
+- Devtools no longer available in production builds
+
+### Fixed
+- Cross-platform build failure — macOS-only dependencies (`core-foundation`) are now properly gated; `notify-debouncer-mini` and `serde` restored as universal dependencies
+
 ## [0.8.0] — 2026-03-11
 
 ### Added
