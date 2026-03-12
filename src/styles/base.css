@@ -29,18 +29,13 @@ html, body {
 #content-scroll {
   flex: 1;
   overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
   padding-right: 10px;
-  will-change: scroll-position;
-  contain: layout style;
 }
 
 #content {
   max-width: 820px;
   margin: 0 auto;
   padding: 12px 48px 40px;
-  contain: layout style;
 }
 
 .empty-state {

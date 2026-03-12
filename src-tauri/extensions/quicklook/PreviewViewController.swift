@@ -30,7 +30,8 @@ class PreviewViewController: NSViewController, QLPreviewingController {
     func preparePreviewOfFile(at url: URL, completionHandler handler: @escaping (Error?) -> Void) {
         do {
             let markdown = try String(contentsOf: url, encoding: .utf8)
-            let html = buildHTML(markdown: markdown)
+            let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            let html = buildHTML(markdown: markdown, isDark: isDark)
 
             let tempFile = FileManager.default.temporaryDirectory
                 .appendingPathComponent("yamv-ql-\(ProcessInfo.processInfo.globallyUniqueString).html")
@@ -43,7 +44,7 @@ class PreviewViewController: NSViewController, QLPreviewingController {
         }
     }
 
-    private func buildHTML(markdown: String) -> String {
+    private func buildHTML(markdown: String, isDark: Bool) -> String {
         let rendererJS = loadResource("renderer", ext: "js")
         let stylesCSS = loadResource("styles", ext: "css")
 
@@ -55,13 +56,15 @@ class PreviewViewController: NSViewController, QLPreviewingController {
         let hasMermaid = markdown.contains("```mermaid")
         let mermaidScript = hasMermaid ? "<script>\(loadResource("mermaid-bundle", ext: "js"))</script>" : ""
 
+        let theme = isDark ? "dark" : "light"
+
         return """
         <!DOCTYPE html>
-        <html>
+        <html data-theme="\(theme)">
         <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="color-scheme" content="light dark">
+        <meta name="color-scheme" content="\(theme)">
         <style>html{background:var(--color-canvas-default)}</style>
         <style>\(stylesCSS)</style>
         </head>

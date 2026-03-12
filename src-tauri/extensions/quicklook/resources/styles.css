@@ -55,6 +55,34 @@
   }
 }
 
+/* Explicit theme override — set by Swift based on system appearance */
+html[data-theme="dark"] {
+  --color-fg-default: #d8d8d8;
+  --color-fg-muted: #969696;
+  --color-fg-heading: #c6d5e0;
+  --color-canvas-default: #1c1e20;
+  --color-canvas-subtle: #292c2e;
+  --color-border-default: #3a3d40;
+  --color-border-muted: #4c4c4c;
+  --color-accent-fg: #74bef7;
+  --color-danger-fg: #e06c75;
+  --color-success-fg: #98c379;
+  --color-attention-fg: #e5c07b;
+  --color-syntax-keyword: #74bef7;
+  --color-syntax-string: #98c379;
+  --color-syntax-comment: #636d83;
+  --color-syntax-function: #61afef;
+  --color-syntax-number: #d19a66;
+  --color-mark-bg: rgba(116, 190, 247, 0.15);
+  --color-syntax-tag: #e06c75;
+  --color-syntax-attr: #56b6c2;
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
 html, body {
   margin: 0;
   padding: 0;
