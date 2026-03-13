@@ -15,10 +15,20 @@ class PreviewViewController: NSViewController, QLPreviewingController {
         self.view = webView
     }
 
+    private static let codeLanguages: [String: String] = [
+        "js": "javascript",
+        "json": "json",
+        "xml": "xml",
+        "yaml": "yaml",
+        "yml": "yaml",
+    ]
+
     func preparePreviewOfFile(at url: URL, completionHandler handler: @escaping (Error?) -> Void) {
         do {
-            let markdown = try String(contentsOf: url, encoding: .utf8)
-            let html = buildHTML(markdown: markdown)
+            let raw = try String(contentsOf: url, encoding: .utf8)
+            let language = Self.codeLanguages[url.pathExtension.lowercased()]
+            let markdown = language != nil ? "```\(language!)\n\(raw)\n```" : raw
+            let html = buildHTML(markdown: markdown, isCodeFile: language != nil)
 
             let tempFile = FileManager.default.temporaryDirectory
                 .appendingPathComponent("yamv-ql-\(ProcessInfo.processInfo.globallyUniqueString).html")
@@ -31,7 +41,7 @@ class PreviewViewController: NSViewController, QLPreviewingController {
         }
     }
 
-    private func buildHTML(markdown: String) -> String {
+    private func buildHTML(markdown: String, isCodeFile: Bool = false) -> String {
         let rendererJS = loadResource("renderer", ext: "js")
         let stylesCSS = loadResource("styles", ext: "css")
 
@@ -66,6 +76,22 @@ class PreviewViewController: NSViewController, QLPreviewingController {
             el.innerHTML = window.renderMarkdown(md);
             if (el.querySelector('code.language-mermaid')) {
                 requestAnimationFrame(function() { window.renderMermaid(el); });
+            }
+            if (\(isCodeFile ? "true" : "false")) {
+                var pre = el.querySelector('pre');
+                if (pre) {
+                    var code = pre.querySelector('code');
+                    var lines = code.textContent.split('\\n');
+                    if (lines[lines.length - 1] === '') lines.pop();
+                    var nums = document.createElement('span');
+                    nums.className = 'line-numbers';
+                    nums.setAttribute('aria-hidden', 'true');
+                    var t = '';
+                    for (var i = 1; i <= lines.length; i++) t += i + '\\n';
+                    nums.textContent = t;
+                    pre.insertBefore(nums, code);
+                    pre.classList.add('with-line-numbers');
+                }
             }
         })();
         </script>
