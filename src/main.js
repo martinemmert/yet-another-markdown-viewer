@@ -425,9 +425,17 @@ try {
   onOpenUrl((urls) => {
     for (const url of urls) {
       try {
-        const parsed = new URL(url);
-        const filePath = parsed.searchParams.get("path") || decodeURIComponent(parsed.pathname);
-        if (filePath) openFile(filePath).catch((e) => console.error("Failed to open deep link:", e));
+        let filePath;
+        if (url.startsWith("file://")) {
+          filePath = decodeURIComponent(new URL(url).pathname);
+        } else if (url.startsWith("/")) {
+          // Plain absolute file path from macOS file-open event
+          filePath = url;
+        } else {
+          const parsed = new URL(url);
+          filePath = parsed.searchParams.get("path") || decodeURIComponent(parsed.pathname);
+        }
+        if (filePath) openFile(filePath).catch((e) => console.error("Failed to open file:", e));
       } catch { /* ignore malformed URLs */ }
     }
   });

@@ -114,7 +114,8 @@ fn install_cli() -> Result<String, String> {
         .ok_or_else(|| "Failed to resolve .app bundle path".to_string())?;
 
     let wrapper = format!(
-        "#!/bin/sh\nopen -a '{}' --args \"$@\"\n",
+        "#!/bin/sh\nif [ -n \"$1\" ]; then\n  FILE=\"$(cd \"$(dirname \"$1\")\" 2>/dev/null && pwd)/$(basename \"$1\")\"\n  open \"$FILE\" -a '{}'\nelse\n  open -a '{}'\nfi\n",
+        app_path.display(),
         app_path.display()
     );
 
