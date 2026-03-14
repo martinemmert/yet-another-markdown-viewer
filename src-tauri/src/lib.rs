@@ -119,10 +119,17 @@ fn install_cli() -> Result<String, String> {
         app_path.display()
     );
 
-    // Use osascript to write the script with admin privileges
+    // Write wrapper to a temp file first, then use osascript to copy it with
+    // admin privileges. This avoids nested quoting issues with echo inside
+    // AppleScript's do shell script (the wrapper contains ", $, and ' which
+    // break when embedded in echo '...' inside do shell script "...").
+    let temp_path = std::env::temp_dir().join("yamv-cli-wrapper");
+    std::fs::write(&temp_path, &wrapper)
+        .map_err(|e| format!("Failed to write temp file: {}", e))?;
+
     let script = format!(
-        "do shell script \"echo '{}' > '{}' && chmod +x '{}'\" with administrator privileges",
-        wrapper.replace('\'', "'\\''").replace('\n', "\\n"),
+        "do shell script \"cp '{}' '{}' && chmod +x '{}'\" with administrator privileges",
+        temp_path.display(),
         cli_path,
         cli_path
     );
@@ -131,6 +138,9 @@ fn install_cli() -> Result<String, String> {
         .arg(&script)
         .output()
         .map_err(|e| format!("Failed to run osascript: {}", e))?;
+
+    // Clean up temp file regardless of outcome
+    let _ = std::fs::remove_file(&temp_path);
 
     if output.status.success() {
         Ok("CLI installed successfully".to_string())
