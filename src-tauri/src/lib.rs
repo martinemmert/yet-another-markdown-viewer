@@ -90,6 +90,11 @@ fn open_in_editor(path: String, editor: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn write_file(path: String, content: String) -> Result<(), String> {
+    std::fs::write(&path, &content).map_err(|e| format!("Failed to write file: {}", e))
+}
+
+#[tauri::command]
 fn check_cli_installed() -> bool {
     let link = PathBuf::from("/usr/local/bin/yamv");
     link.exists()
@@ -302,14 +307,21 @@ fn build_menu(app: &AppHandle) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::E
 
     let file_menu = SubmenuBuilder::new(app, "File")
         .item(&MenuItemBuilder::with_id("open", "Open…").accelerator("CmdOrCtrl+O").build(app)?)
-        .item(&MenuItemBuilder::with_id("edit-in-editor", "Edit in Editor").accelerator("CmdOrCtrl+E").build(app)?)
+        .item(&MenuItemBuilder::with_id("toggle-editor", "Edit").accelerator("CmdOrCtrl+E").build(app)?)
+        .item(&MenuItemBuilder::with_id("save", "Save").accelerator("CmdOrCtrl+S").build(app)?)
+        .item(&MenuItemBuilder::with_id("open-in-external", "Open in External Editor…").accelerator("CmdOrCtrl+Shift+E").build(app)?)
         .item(&MenuItemBuilder::with_id("close-file", "Close File").accelerator("CmdOrCtrl+W").build(app)?)
         .separator()
         .item(&MenuItemBuilder::with_id("print", "Print…").accelerator("CmdOrCtrl+P").build(app)?)
         .build()?;
 
     let edit_menu = SubmenuBuilder::new(app, "Edit")
+        .item(&PredefinedMenuItem::undo(app, None)?)
+        .item(&PredefinedMenuItem::redo(app, None)?)
+        .separator()
+        .item(&PredefinedMenuItem::cut(app, None)?)
         .item(&PredefinedMenuItem::copy(app, None)?)
+        .item(&PredefinedMenuItem::paste(app, None)?)
         .item(&PredefinedMenuItem::select_all(app, None)?)
         .separator()
         .item(&MenuItemBuilder::with_id("find", "Find…").accelerator("CmdOrCtrl+F").build(app)?)
@@ -363,7 +375,7 @@ pub fn run() {
             watcher: Mutex::new(None),
             current_file: Mutex::new(None),
         })
-        .invoke_handler(tauri::generate_handler![open_file, print_page, open_in_editor, check_cli_installed, install_cli, uninstall_cli, default_app::is_default_markdown_app, default_app::set_default_markdown_app])
+        .invoke_handler(tauri::generate_handler![open_file, print_page, open_in_editor, write_file, check_cli_installed, install_cli, uninstall_cli, default_app::is_default_markdown_app, default_app::set_default_markdown_app])
         .setup(|app| {
             let handle = app.handle().clone();
             if let Some(window) = app.get_webview_window("main") {

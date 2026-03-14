@@ -1,0 +1,222 @@
+/* Editor overrides — imported AFTER Crepe's frame.css to guarantee cascade order.
+   Maps Crepe CSS variables to the app's theme variables so the editor
+   matches the viewer (.markdown-body) styles exactly. */
+
+/* ── Crepe variable overrides ────────────────────────────────────── */
+
+#editor-container .milkdown,
+#editor-container .milkdown.dark {
+  --crepe-color-background: var(--color-canvas-default);
+  --crepe-color-on-background: var(--color-fg-default);
+  --crepe-color-surface: var(--color-canvas-subtle);
+  --crepe-color-surface-low: var(--color-canvas-subtle);
+  --crepe-color-on-surface: var(--color-fg-default);
+  --crepe-color-on-surface-variant: var(--color-fg-muted);
+  --crepe-color-outline: var(--color-border-default);
+  --crepe-color-primary: var(--color-accent-fg);
+  --crepe-color-secondary: var(--color-border-muted);
+  --crepe-color-on-secondary: var(--color-fg-default);
+  --crepe-color-inverse: var(--color-canvas-subtle);
+  --crepe-color-on-inverse: var(--color-fg-default);
+  --crepe-color-inline-code: var(--color-fg-default);
+  --crepe-color-error: var(--color-danger-fg);
+  --crepe-color-hover: var(--color-canvas-subtle);
+  --crepe-color-selected: var(--color-border-muted);
+  --crepe-color-inline-area: var(--color-canvas-subtle);
+  --crepe-font-title: var(--heading-font);
+  --crepe-font-default: inherit;
+  --crepe-font-code: var(--code-font);
+  --crepe-shadow-1: none;
+  --crepe-shadow-2: none;
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* ── ProseMirror content area ────────────────────────────────────── */
+
+#editor-container .milkdown .ProseMirror {
+  max-width: var(--content-max-width, 820px);
+  margin: 0 auto;
+  padding: 12px 48px 40px;
+  font-size: inherit;
+  line-height: inherit;
+  color: var(--color-fg-default);
+}
+
+/* ── Paragraphs ──────────────────────────────────────────────────── */
+
+#editor-container .milkdown .ProseMirror p {
+  font-size: inherit;
+  line-height: inherit;
+  padding: 0;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+/* ── Headings ────────────────────────────────────────────────────── */
+
+#editor-container .milkdown .ProseMirror h1,
+#editor-container .milkdown .ProseMirror h2,
+#editor-container .milkdown .ProseMirror h3,
+#editor-container .milkdown .ProseMirror h4,
+#editor-container .milkdown .ProseMirror h5,
+#editor-container .milkdown .ProseMirror h6 {
+  font-family: var(--heading-font);
+  color: var(--color-fg-heading);
+  margin-top: 32px;
+  margin-bottom: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  padding: 0;
+}
+
+#editor-container .milkdown .ProseMirror h1 { font-size: 1.8em; }
+#editor-container .milkdown .ProseMirror h2 { font-size: 1.4em; }
+#editor-container .milkdown .ProseMirror h3 { font-size: 1.2em; }
+#editor-container .milkdown .ProseMirror h4 { font-size: 1.05em; }
+#editor-container .milkdown .ProseMirror h5 { font-size: 0.95em; }
+#editor-container .milkdown .ProseMirror h6 { font-size: 0.9em; color: var(--color-fg-muted); }
+
+/* ── Links ───────────────────────────────────────────────────────── */
+
+#editor-container .milkdown .ProseMirror a {
+  color: var(--color-accent-fg);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+#editor-container .milkdown .ProseMirror a:hover {
+  border-bottom-color: var(--color-accent-fg);
+}
+
+/* ── Blockquotes ─────────────────────────────────────────────────── */
+
+#editor-container .milkdown .ProseMirror blockquote {
+  margin: 0 0 16px 0;
+  padding: 0 1.2em;
+  padding-left: 1.2em;
+  color: var(--color-fg-muted);
+  border-left: 3px solid var(--color-border-default);
+  font-style: italic;
+}
+
+#editor-container .milkdown .ProseMirror blockquote::before {
+  display: none;
+}
+
+/* ── Inline code ─────────────────────────────────────────────────── */
+
+#editor-container .milkdown .ProseMirror code {
+  padding: 0.15em 0.4em;
+  font-size: 0.85em;
+  background-color: var(--color-canvas-subtle);
+  border-radius: 4px;
+  font-family: var(--code-font);
+  color: var(--color-fg-default);
+  line-height: inherit;
+  display: inline;
+}
+
+/* ── Code blocks ─────────────────────────────────────────────────── */
+
+#editor-container .milkdown .ProseMirror pre {
+  padding: 18px;
+  overflow: auto;
+  font-size: 0.85em;
+  line-height: 1.55;
+  background-color: var(--color-canvas-subtle);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+#editor-container .milkdown .ProseMirror pre code {
+  padding: 0;
+  font-size: 100%;
+  background-color: transparent;
+  border-radius: 0;
+  color: inherit;
+}
+
+/* ── Lists ───────────────────────────────────────────────────────── */
+
+#editor-container .milkdown .ProseMirror ul,
+#editor-container .milkdown .ProseMirror ol {
+  margin-top: 0;
+  margin-bottom: 16px;
+  padding-left: 2em;
+}
+
+#editor-container .milkdown .ProseMirror ul {
+  list-style-type: disc;
+}
+
+#editor-container .milkdown .ProseMirror ul ul {
+  list-style-type: circle;
+}
+
+#editor-container .milkdown .ProseMirror ul ul ul {
+  list-style-type: square;
+}
+
+#editor-container .milkdown .ProseMirror li + li {
+  margin-top: 0.3em;
+}
+
+#editor-container .milkdown .ProseMirror li p {
+  margin-bottom: 0;
+}
+
+/* ── Tables ──────────────────────────────────────────────────────── */
+
+#editor-container .milkdown .ProseMirror table {
+  border-spacing: 0;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  width: max-content;
+  max-width: 100%;
+}
+
+#editor-container .milkdown .ProseMirror table th,
+#editor-container .milkdown .ProseMirror table td {
+  padding: 8px 14px;
+  border: 1px solid var(--color-border-default);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
+    Helvetica, Arial, sans-serif;
+  font-size: 0.9em;
+}
+
+#editor-container .milkdown .ProseMirror table th {
+  font-weight: 600;
+  background-color: var(--color-canvas-subtle);
+}
+
+/* ── Horizontal rule ─────────────────────────────────────────────── */
+
+#editor-container .milkdown .ProseMirror hr {
+  height: 1px;
+  padding: 0;
+  margin: 32px 0;
+  background-color: var(--color-border-muted);
+  border: 0;
+  background-clip: unset;
+}
+
+/* ── Images ──────────────────────────────────────────────────────── */
+
+#editor-container .milkdown .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* ── Strong & emphasis ───────────────────────────────────────────── */
+
+#editor-container .milkdown .ProseMirror strong {
+  font-weight: 700;
+}
+
+#editor-container .milkdown .ProseMirror s {
+  text-decoration: line-through;
+}

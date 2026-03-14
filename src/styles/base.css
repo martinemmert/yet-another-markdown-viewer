@@ -38,6 +38,21 @@ html, body {
   padding: 12px 48px 40px;
 }
 
+/* Editor container */
+#editor-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#editor-container[hidden] {
+  display: none;
+}
+
+/* Milkdown editor styles are in src/styles/editor.css,
+   imported via editor.js after Crepe's frame.css */
+
 .empty-state {
   display: flex;
   align-items: center;
@@ -1010,7 +1025,8 @@ html, body {
   .toc-sidebar,
   .empty-state,
   .update-banner,
-  .header-anchor {
+  .header-anchor,
+  #editor-container {
     display: none !important;
   }
 

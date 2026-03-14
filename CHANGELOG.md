@@ -2,6 +2,22 @@
 
 All notable changes to YAMV are documented in this file.
 
+## [0.10.0] — 2026-03-14
+
+### Added
+- **Built-in WYSIWYG editor** — toggle with `Cmd+E` to edit markdown files directly in YAMV using a rich text editor (Milkdown Crepe). No visible markdown syntax — headings, bold, lists, code blocks, and tables render as formatted text. Markdown is the storage format.
+- Auto-save with 1-second debounce while editing
+- `Cmd+S` for explicit save
+- `write_file` Tauri command for saving edited content
+- Full Edit menu with undo, redo, cut, copy, paste, select all
+- Editor features: floating toolbar, slash commands, block drag handles, link tooltips, placeholder text, GFM tables, task lists, LaTeX math, CodeMirror code blocks with syntax highlighting
+
+### Changed
+- `Cmd+E` now toggles the built-in editor (was: open in external editor)
+- `Cmd+Shift+E` opens the external editor (was: `Cmd+E`)
+- "Editor" settings label renamed to "External Editor" with updated hint
+- File watcher events are ignored while in editor mode
+
 ## [0.9.0] — 2026-03-12
 
 ### Added

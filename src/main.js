@@ -12,6 +12,7 @@ import { relaunch } from "@tauri-apps/plugin-process";
 import { getVersion } from "@tauri-apps/api/app";
 import { arch, platform } from "@tauri-apps/plugin-os";
 import { render, postRender } from "./renderer.js";
+import { createEditor, destroyEditor, getContent, updateTheme as syncEditorTheme, focusEditor } from "./editor.js";
 import "katex/dist/katex.min.css";
 
 // Fonts
@@ -76,10 +77,12 @@ const searchBar = document.getElementById("search-bar");
 const searchInput = document.getElementById("search-input");
 const searchCount = document.getElementById("search-count");
 const appLayout = document.getElementById("app-layout");
+const editorContainer = document.getElementById("editor-container");
 
 let currentDir = "";
 let currentMarkdown = "";
 let currentFilePath = "";
+let editorMode = false;
 
 // ── Utilities ─────────────────────────────────────────────────────
 
@@ -245,6 +248,12 @@ async function openFile(path) {
 
 async function closeFile() {
   if (!currentFilePath && !currentMarkdown) return;
+  if (editorMode) {
+    destroyEditor();
+    editorContainer.hidden = true;
+    scrollEl.hidden = false;
+    editorMode = false;
+  }
   await saveScrollPosition();
   currentFilePath = "";
   currentMarkdown = "";
@@ -264,7 +273,64 @@ async function openFileDialog() {
   }
 }
 
-async function editInEditor() {
+// ── Editor mode ──────────────────────────────────────────────────
+
+async function toggleEditor() {
+  if (!currentFilePath && !currentMarkdown) return;
+
+  if (editorMode) {
+    // Exit editor → back to viewer
+    const content = getContent();
+    currentMarkdown = content;
+    destroyEditor();
+    editorContainer.hidden = true;
+    scrollEl.hidden = false;
+    editorMode = false;
+
+    // Re-render content
+    contentEl.innerHTML = render(currentMarkdown);
+    resolveImages();
+    buildToc();
+    requestAnimationFrame(() => postRender(contentEl));
+  } else {
+    // Enter editor
+    editorMode = true;
+    scrollEl.hidden = true;
+    editorContainer.hidden = false;
+    editorContainer.innerHTML = "";
+
+    await createEditor(editorContainer, currentMarkdown, {
+      onSave: async (text) => {
+        if (currentFilePath) {
+          try {
+            await invoke("write_file", { path: currentFilePath, content: text });
+          } catch (e) {
+            console.error("Failed to save:", e);
+          }
+        }
+      },
+      onChange: (text) => {
+        currentMarkdown = text;
+        const words = wordCount(text);
+        titlebarStats.textContent = `${words.toLocaleString()} words · ${readingTime(words)}`;
+      },
+    });
+
+    focusEditor();
+  }
+}
+
+async function saveFile() {
+  if (!editorMode || !currentFilePath) return;
+  const content = getContent();
+  try {
+    await invoke("write_file", { path: currentFilePath, content });
+  } catch (e) {
+    console.error("Failed to save:", e);
+  }
+}
+
+async function openInExternal() {
   if (!currentFilePath) return;
   const s = await loadSettings();
   if (!s.editor) {
@@ -311,6 +377,7 @@ window
 // ── Event listeners ───────────────────────────────────────────────
 
 listen("file-changed", (event) => {
+  if (editorMode) return; // Ignore file changes while editing
   const { content, dir, filename } = event.payload;
   showContent(content, dir, filename);
 });
@@ -320,7 +387,9 @@ listen("menu-action", (event) => {
   const action = event.payload;
   const actions = {
     "open": () => openFileDialog(),
-    "edit-in-editor": () => editInEditor(),
+    "toggle-editor": () => toggleEditor(),
+    "save": () => saveFile(),
+    "open-in-external": () => openInExternal(),
     "close-file": () => closeFile(),
     "print": () => invoke("print_page"),
     "find": () => openSearch(),
@@ -683,6 +752,14 @@ function applySettings(s) {
   });
 
   applyTheme(s.theme || "auto");
+
+  // Sync editor max-width via CSS custom property
+  document.documentElement.style.setProperty("--content-max-width", s.maxWidth + "px");
+
+  // Sync editor theme if in editor mode
+  if (editorMode) {
+    syncEditorTheme();
+  }
 }
 
 // Load settings and version info in parallel
@@ -905,11 +982,17 @@ document.addEventListener("keydown", (e) => {
     saveSettings(settings);
     applySettings(settings);
   }
-  // Escape — close panels
+  // Cmd+S — save (explicit)
+  if (cmd && e.key === "s" && !e.shiftKey) {
+    e.preventDefault();
+    saveFile();
+  }
+  // Escape — close panels or exit editor
   if (e.key === "Escape") {
     if (!searchBar.hidden) closeSearch();
     else if (!settingsPanel.hidden) { settingsPanel.hidden = true; settingsBackdrop.hidden = true; }
     else if (!document.getElementById("help-panel").hidden) document.getElementById("help-panel").hidden = true;
+    else if (editorMode) toggleEditor();
   }
 });
 
