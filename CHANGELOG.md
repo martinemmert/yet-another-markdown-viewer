@@ -18,6 +18,11 @@ All notable changes to YAMV are documented in this file.
 - "Editor" settings label renamed to "External Editor" with updated hint
 - File watcher events are ignored while in editor mode
 
+### Fixed
+- Opening a file via `yamv file.md` or double-click now works correctly when the app is already running — previously the old file was shown instead of the new one
+- CLI wrapper script now uses macOS file-open mechanism (`open FILE -a APP`) instead of `--args` which was silently ignored on reactivation
+- Deep-link handler now accepts `file://` URLs and plain file paths from macOS file association events
+
 ## [0.9.0] — 2026-03-12
 
 ### Added
