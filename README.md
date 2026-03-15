@@ -78,6 +78,8 @@ Press Enter, then open the app again.
 
 Press **Space** on any `.md` file in Finder to see a fully rendered preview — complete with syntax highlighting, KaTeX math, and Mermaid diagrams. Works in both light and dark mode.
 
+> **Note:** If you have other markdown apps installed (e.g. Bear, MarkEdit), their QuickLook extensions may override YAMV's. Go to **System Settings → Privacy & Security → Extensions → Quick Look** to manage which extension handles `.md` previews. See **Help → QuickLook Troubleshooting** in the app for details.
+
 ### Set as default markdown viewer (macOS)
 
 Open **Settings** (`Cmd+,`) and click **Set Default** under *Default App*. This registers YAMV for:

@@ -401,6 +401,7 @@ listen("menu-action", (event) => {
     "check-update": () => checkForUpdates(false),
     "show-welcome": () => showWelcome(),
     "show-test-doc": () => showBundledDoc("/test-perf.md", "Rendering Test"),
+    "show-ql-troubleshooting": () => showBundledDoc("/quicklook-troubleshooting.md", "QuickLook Troubleshooting"),
     "show-help": () => { const h = document.getElementById("help-panel"); h.hidden = !h.hidden; },
   };
   if (actions[action]) actions[action]();
