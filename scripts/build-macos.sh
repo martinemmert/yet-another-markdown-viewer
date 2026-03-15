@@ -26,12 +26,16 @@ fi
 echo "Injecting QuickLook extension into $APP..."
 bash src-tauri/extensions/quicklook/inject.sh "$APP"
 
-# 5. Recreate the DMG with the modified .app
+# 5. Recreate the DMG with the modified .app (includes Applications symlink)
 DMG=$(find src-tauri/target -name "*.dmg" -path "*/bundle/dmg/*" 2>/dev/null | head -1)
 if [ -n "$DMG" ]; then
   echo "Recreating DMG at $DMG..."
   rm -f "$DMG"
-  hdiutil create -volname "YAMV" -srcfolder "$APP" -ov -format UDZO "$DMG"
+  STAGING=$(mktemp -d)
+  cp -R "$APP" "$STAGING/"
+  ln -s /Applications "$STAGING/Applications"
+  hdiutil create -volname "YAMV" -srcfolder "$STAGING" -ov -format UDZO "$DMG"
+  rm -rf "$STAGING"
 fi
 
 # 6. Recreate the updater .tar.gz and re-sign it
