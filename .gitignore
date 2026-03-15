@@ -2,6 +2,9 @@ node_modules/
 src-tauri/target/
 dist/
 .DS_Store
+.claude/
 src-tauri/extensions/quicklook/build/
 src-tauri/extensions/quicklook/resources/renderer.js
 src-tauri/extensions/quicklook/resources/mermaid-bundle.js
+src-tauri/extensions/quicklook/resources/icon.png
+src-tauri/extensions/quicklook/resources/test-perf.md
