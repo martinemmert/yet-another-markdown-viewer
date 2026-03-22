@@ -13,6 +13,8 @@ import { getVersion } from "@tauri-apps/api/app";
 import { arch, platform } from "@tauri-apps/plugin-os";
 import { render, postRender } from "./renderer.js";
 import { createEditor, destroyEditor, getContent, updateTheme as syncEditorTheme, focusEditor } from "./editor.js";
+import TurndownService from "turndown";
+import { gfm } from "turndown-plugin-gfm";
 import "katex/dist/katex.min.css";
 
 // Fonts
@@ -658,22 +660,24 @@ document.getElementById("search-close").addEventListener("click", closeSearch);
 
 // ── Copy as Markdown ──────────────────────────────────────────────
 
+const turndown = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
+turndown.use(gfm);
+
 document.addEventListener("copy", (e) => {
-  if (!currentMarkdown) return;
+  if (editorMode) return; // let the editor handle its own copy
 
   const selection = window.getSelection();
   if (!selection || selection.isCollapsed) return;
+  if (!contentEl.contains(selection.anchorNode)) return;
 
-  const selectedText = selection.toString();
-  if (!selectedText.trim()) return;
+  const container = document.createElement("div");
+  for (let i = 0; i < selection.rangeCount; i++) {
+    container.appendChild(selection.getRangeAt(i).cloneContents());
+  }
 
-  const idx = currentMarkdown.indexOf(selectedText.trim());
-  if (idx !== -1) {
-    const before = currentMarkdown.lastIndexOf("\n", idx);
-    const after = currentMarkdown.indexOf("\n", idx + selectedText.trim().length);
-    const start = before === -1 ? 0 : before + 1;
-    const end = after === -1 ? currentMarkdown.length : after;
-    e.clipboardData.setData("text/plain", currentMarkdown.slice(start, end));
+  const md = turndown.turndown(container.innerHTML);
+  if (md.trim()) {
+    e.clipboardData.setData("text/plain", md);
     e.preventDefault();
   }
 });

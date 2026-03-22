@@ -23,6 +23,15 @@ All notable changes to YAMV are documented in this file.
 - CLI wrapper script now uses macOS file-open mechanism (`open FILE -a APP`) instead of `--args` which was silently ignored on reactivation
 - Deep-link handler now accepts `file://` URLs and plain file paths from macOS file association events
 
+## [0.10.3] — 2026-03-22
+
+### Fixed
+- **Copy as Markdown** — selecting text in the viewer and copying now produces proper markdown (headings, bold, links, code blocks, tables) instead of plain text. Uses turndown for reliable HTML-to-markdown conversion.
+- DMG installer now shows the Applications folder for drag-to-install
+
+### Added
+- **QuickLook Troubleshooting** article in Help menu — explains how to fix conflicts with competing QuickLook extensions (Bear, MarkEdit, etc.)
+
 ## [0.10.1] — 2026-03-14
 
 ### Fixed
