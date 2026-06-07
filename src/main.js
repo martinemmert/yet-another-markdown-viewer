@@ -243,9 +243,17 @@ async function showEmptyState() {
   await renderRecentFiles();
 }
 
-async function openFile(path) {
+async function openFile(path, anchor) {
   const result = await invoke("open_file", { path });
   await showContent(result.content, result.dir, result.filename, path);
+  if (anchor) {
+    requestAnimationFrame(() => {
+      const target = document.getElementById(anchor);
+      if (target) {
+        scrollEl.scrollTo({ top: target.offsetTop - 40, behavior: "smooth" });
+      }
+    });
+  }
 }
 
 async function closeFile() {
@@ -424,6 +432,8 @@ listen("tauri://drag-drop", async (event) => {
 
 // ── Deep links ───────────────────────────────────────────────────
 
+let openedViaDeepLink = false;
+
 try {
   onOpenUrl((urls) => {
     for (const url of urls) {
@@ -438,7 +448,10 @@ try {
           const parsed = new URL(url);
           filePath = parsed.searchParams.get("path") || decodeURIComponent(parsed.pathname);
         }
-        if (filePath) openFile(filePath).catch((e) => console.error("Failed to open file:", e));
+        if (filePath) {
+          openedViaDeepLink = true;
+          openFile(filePath).catch((e) => console.error("Failed to open file:", e));
+        }
       } catch { /* ignore malformed URLs */ }
     }
   });
@@ -468,6 +481,19 @@ contentEl.addEventListener("click", (e) => {
   if (href.startsWith("http://") || href.startsWith("https://")) {
     e.preventDefault();
     openUrl(href);
+    return;
+  }
+
+  // Relative markdown links — open in a new YAMV window
+  const mdExtensions = [".md", ".markdown", ".mdx", ".mdown", ".mkd"];
+  const [hrefPath, hrefAnchor] = href.split("#");
+  if (currentDir && hrefPath && mdExtensions.some((ext) => hrefPath.toLowerCase().endsWith(ext))) {
+    e.preventDefault();
+    const resolved = currentDir + "/" + hrefPath;
+    const anchor = hrefAnchor || null;
+    invoke("open_in_new_window", { path: resolved, anchor }).catch((err) =>
+      console.error("Failed to open linked file:", err),
+    );
   }
 });
 
@@ -1234,6 +1260,13 @@ async function showBundledDoc(path, title) {
 // ── Init ──────────────────────────────────────────────────────────
 
 async function init() {
+  // Secondary windows: check if Rust stashed a file for this window
+  const pending = await invoke("get_pending_file");
+  if (pending) {
+    await openFile(pending.path, pending.anchor);
+    return;
+  }
+
   // Check CLI args via the cli plugin
   let initialFile = null;
   try {
@@ -1246,23 +1279,32 @@ async function init() {
 
   if (initialFile) {
     await openFile(initialFile);
+  } else if (openedViaDeepLink) {
+    // File association / deep link already handled — don't restore last file
   } else {
-    // Try reopening last file
-    const lastFile = await store.get("last-file");
-    if (lastFile) {
-      try {
-        await openFile(lastFile);
-        return;
-      } catch {
-        await store.delete("last-file");
-        store.save();
-      }
-    }
-    // Show welcome on first boot, empty state otherwise
-    if (!(await store.get("welcomed"))) {
-      await showWelcome();
+    // Give deep links a moment to arrive before falling back to last-file restore.
+    // macOS sends the open-file event asynchronously after app launch, so without
+    // this delay we'd briefly show the previous session's file.
+    await new Promise((r) => setTimeout(r, 150));
+    if (openedViaDeepLink) {
+      // Deep link arrived during the wait — skip restore
     } else {
-      await showEmptyState();
+      const lastFile = await store.get("last-file");
+      if (lastFile) {
+        try {
+          await openFile(lastFile);
+        } catch {
+          await store.delete("last-file");
+          store.save();
+        }
+      }
+      if (!lastFile || !currentFilePath) {
+        if (!(await store.get("welcomed"))) {
+          await showWelcome();
+        } else {
+          await showEmptyState();
+        }
+      }
     }
   }
 

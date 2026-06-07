@@ -2,6 +2,20 @@
 
 All notable changes to YAMV are documented in this file.
 
+## [0.11.0] — 2026-06-07
+
+### Added
+- **Multi-window support** — clicking a relative markdown link (e.g. `[Tasks](./tasks.md)`) opens the linked document in a new YAMV window, so you can view multiple docs side by side
+- **Anchor navigation** — links with fragments (e.g. `tasks.md#section`) scroll to the target heading in the new window
+- Per-window file watching — each window independently watches its own file for changes
+
+### Changed
+- Menu actions (print, search, zoom, etc.) now target the focused window instead of broadcasting to all windows
+- Dependencies updated to latest versions (Tauri 2.11, Vite 8, Mermaid 11.15, KaTeX 0.17, and more)
+
+### Fixed
+- Race condition when opening a file via double-click/file association — previously the last session's file could flash briefly before the correct file loaded
+
 ## [0.10.0] — 2026-03-14
 
 ### Added
