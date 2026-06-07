@@ -136,13 +136,20 @@ fn open_in_new_window(
     );
 
     let url = tauri::WebviewUrl::App("index.html".into());
-    let window = WebviewWindowBuilder::new(&app, &label, url)
+    let mut builder = WebviewWindowBuilder::new(&app, &label, url)
         .title("YAMV")
         .inner_size(800.0, 900.0)
         .min_inner_size(400.0, 300.0)
-        .resizable(true)
-        .title_bar_style(tauri::TitleBarStyle::Overlay)
-        .hidden_title(true)
+        .resizable(true);
+
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder
+            .title_bar_style(tauri::TitleBarStyle::Overlay)
+            .hidden_title(true);
+    }
+
+    let window = builder
         .build()
         .map_err(|e| format!("Failed to create window: {}", e))?;
 
